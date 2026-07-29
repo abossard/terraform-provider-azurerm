@@ -86,6 +86,7 @@ var services = mapOf(
         "mssqlmanagedinstance" to "Microsoft SQL Server Managed Instances",
         "mongocluster" to "Mongo Cluster",
         "monitor" to "Monitor",
+        "cloudhealth" to "Monitor Health Models",
         "mysql" to "MySQL",
         "netapp" to "NetApp",
         "network" to "Network",

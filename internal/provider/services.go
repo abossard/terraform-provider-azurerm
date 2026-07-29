@@ -25,6 +25,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/bot"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cdn"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/chaosstudio"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/codesigning"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cognitive"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/communication"
@@ -156,6 +157,7 @@ func SupportedTypedServices() []sdk.TypedServiceRegistration {
 		batch.Registration{},
 		bot.Registration{},
 		cdn.Registration{},
+		cloudhealth.Registration{},
 		codesigning.Registration{},
 		cognitive.Registration{},
 		communication.Registration{},

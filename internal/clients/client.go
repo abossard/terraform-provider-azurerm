@@ -44,6 +44,7 @@ import (
 	blueprints "github.com/hashicorp/terraform-provider-azurerm/internal/services/blueprints/client"
 	bot "github.com/hashicorp/terraform-provider-azurerm/internal/services/bot/client"
 	cdn "github.com/hashicorp/terraform-provider-azurerm/internal/services/cdn/client"
+	cloudhealth "github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/client"
 	codesigning "github.com/hashicorp/terraform-provider-azurerm/internal/services/codesigning/client"
 	cognitiveServices "github.com/hashicorp/terraform-provider-azurerm/internal/services/cognitive/client"
 	communication "github.com/hashicorp/terraform-provider-azurerm/internal/services/communication/client"
@@ -183,6 +184,7 @@ type Client struct {
 	Blueprints                        *blueprints.Client
 	Bot                               *bot.Client
 	Cdn                               *cdn.Client
+	CloudHealth                       *cloudhealth.Client
 	CodeSigning                       *codesigning.Client
 	Cognitive                         *cognitiveServices.Client
 	Communication                     *communication.Client
@@ -368,6 +370,9 @@ func (client *Client) Build(ctx context.Context, o *common.ClientOptions) error 
 	}
 	if client.Cdn, err = cdn.NewClient(o); err != nil {
 		return fmt.Errorf("building clients for Cdn: %+v", err)
+	}
+	if client.CloudHealth, err = cloudhealth.NewClient(o); err != nil {
+		return fmt.Errorf("building clients for Monitor Health Models: %+v", err)
 	}
 	if client.CodeSigning, err = codesigning.NewClient(o); err != nil {
 		return fmt.Errorf("building clients for Code Signing: %+v", err)

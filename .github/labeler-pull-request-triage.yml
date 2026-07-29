@@ -384,6 +384,11 @@ service/monitor:
   - any-glob-to-any-file:
     - internal/services/monitor/**/*
 
+service/monitor-health-models:
+- changed-files:
+  - any-glob-to-any-file:
+    - internal/services/cloudhealth/**/*
+
 service/mssql:
 - changed-files:
   - any-glob-to-any-file:
