@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/parse"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/authenticationsettings"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -87,15 +89,21 @@ func TestAccMonitorHealthModelAuthenticationSetting_update(t *testing.T) {
 	})
 }
 
-func (r MonitorHealthModelAuthenticationSettingResource) Exists(_ context.Context, _ *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.AuthenticationSettingID(state.ID)
+func (r MonitorHealthModelAuthenticationSettingResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := authenticationsettings.ParseAuthenticationSettingID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: replace with `clients.CloudHealth.AuthenticationSettingsClient.Get(ctx, *id)` once a stable
-	// `Microsoft.CloudHealth` API version ships and `hashicorp/go-azure-sdk` is vendored.
-	return nil, fmt.Errorf("checking for %s: %w", id, errSDKUnavailable)
+	resp, err := clients.CloudHealth.AuthenticationSettings.Get(ctx, *id)
+	if err != nil {
+		if response.WasNotFound(resp.HttpResponse) {
+			return pointer.To(false), nil
+		}
+		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
+	}
+
+	return pointer.To(resp.Model != nil), nil
 }
 
 func (r MonitorHealthModelAuthenticationSettingResource) template(data acceptance.TestData) string {
@@ -109,13 +117,20 @@ resource "azurerm_resource_group" "test" {
   location = "%[2]s"
 }
 
+resource "azurerm_user_assigned_identity" "test" {
+  name                = "acctest-uai-%[1]d"
+  resource_group_name = azurerm_resource_group.test.name
+  location            = azurerm_resource_group.test.location
+}
+
 resource "azurerm_monitor_health_model" "test" {
   name                = "acctest-hm-%[1]d"
   resource_group_name = azurerm_resource_group.test.name
   location            = azurerm_resource_group.test.location
 
   identity {
-    type = "SystemAssigned"
+    type         = "SystemAssigned, UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.test.id]
   }
 }
 `, data.RandomInteger, data.Locations.Primary)
@@ -148,12 +163,6 @@ resource "azurerm_monitor_health_model_authentication_setting" "import" {
 func (r MonitorHealthModelAuthenticationSettingResource) complete(data acceptance.TestData) string {
 	return fmt.Sprintf(`
 %[1]s
-
-resource "azurerm_user_assigned_identity" "test" {
-  name                = "acctest-uai-%[2]d"
-  resource_group_name = azurerm_resource_group.test.name
-  location            = azurerm_resource_group.test.location
-}
 
 resource "azurerm_monitor_health_model_authentication_setting" "test" {
   name             = "acctest-as-%[2]d"

@@ -6,12 +6,15 @@ package cloudhealth_test
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/parse"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/signaldefinitions"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -103,15 +106,73 @@ func TestAccMonitorHealthModelSignalDefinition_logAnalyticsQuery(t *testing.T) {
 	})
 }
 
-func (r MonitorHealthModelSignalDefinitionResource) Exists(_ context.Context, _ *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.SignalDefinitionID(state.ID)
+func TestAccMonitorHealthModelSignalDefinition_prometheusMetricsQuery(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_signal_definition", "test")
+	r := MonitorHealthModelSignalDefinitionResource{}
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.prometheusMetricsQuery(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+	})
+}
+
+func TestAccMonitorHealthModelSignalDefinition_dynamicOperator(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_signal_definition", "test")
+	r := MonitorHealthModelSignalDefinitionResource{}
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.dynamicOperator(data),
+			Check: acceptance.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+			),
+		},
+		data.ImportStep(),
+	})
+}
+
+func TestAccMonitorHealthModelSignalDefinition_dynamicOperatorWithThreshold(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_signal_definition", "test")
+	r := MonitorHealthModelSignalDefinitionResource{}
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config:      r.dynamicOperatorWithThreshold(data),
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile("`threshold` cannot be set in `evaluation_rule.unhealthy` when `operator` is `Dynamic`"),
+		},
+	})
+}
+
+func TestAccMonitorHealthModelSignalDefinition_staticOperatorWithSensitivity(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_signal_definition", "test")
+	r := MonitorHealthModelSignalDefinitionResource{}
+	data.ResourceTest(t, r, []acceptance.TestStep{
+		{
+			Config:      r.staticOperatorWithSensitivity(data),
+			PlanOnly:    true,
+			ExpectError: regexp.MustCompile("`sensitivity` cannot be set in `evaluation_rule.unhealthy` when `operator` is `LessThan`"),
+		},
+	})
+}
+
+func (r MonitorHealthModelSignalDefinitionResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := signaldefinitions.ParseSignalDefinitionID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: replace with `clients.CloudHealth.SignalDefinitionsClient.Get(ctx, *id)` once a stable
-	// `Microsoft.CloudHealth` API version ships and `hashicorp/go-azure-sdk` is vendored.
-	return nil, fmt.Errorf("checking for %s: %w", id, errSDKUnavailable)
+	resp, err := clients.CloudHealth.SignalDefinitions.Get(ctx, *id)
+	if err != nil {
+		if response.WasNotFound(resp.HttpResponse) {
+			return pointer.To(false), nil
+		}
+		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
+	}
+
+	return pointer.To(resp.Model != nil), nil
 }
 
 func (r MonitorHealthModelSignalDefinitionResource) template(data acceptance.TestData) string {
@@ -246,6 +307,110 @@ resource "azurerm_monitor_health_model_signal_definition" "test" {
     unhealthy {
       operator  = "GreaterThan"
       threshold = 25
+    }
+  }
+}
+`, r.template(data), data.RandomInteger)
+}
+
+func (r MonitorHealthModelSignalDefinitionResource) dynamicOperatorWithThreshold(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%s
+
+resource "azurerm_monitor_health_model_signal_definition" "test" {
+  name            = "acctest-sd-%d"
+  health_model_id = azurerm_monitor_health_model.test.id
+
+  azure_resource_metric {
+    metric_namespace = "Microsoft.Storage/storageAccounts"
+    metric_name      = "Availability"
+    aggregation_type = "Average"
+    time_grain       = "PT5M"
+  }
+
+  evaluation_rule {
+    unhealthy {
+      operator    = "Dynamic"
+      sensitivity = "Medium"
+      threshold   = 99
+    }
+  }
+}
+`, r.template(data), data.RandomInteger)
+}
+
+func (r MonitorHealthModelSignalDefinitionResource) staticOperatorWithSensitivity(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%s
+
+resource "azurerm_monitor_health_model_signal_definition" "test" {
+  name            = "acctest-sd-%d"
+  health_model_id = azurerm_monitor_health_model.test.id
+
+  azure_resource_metric {
+    metric_namespace = "Microsoft.Storage/storageAccounts"
+    metric_name      = "Availability"
+    aggregation_type = "Average"
+    time_grain       = "PT5M"
+  }
+
+  evaluation_rule {
+    unhealthy {
+      operator    = "LessThan"
+      threshold   = 99
+      sensitivity = "Medium"
+    }
+  }
+}
+`, r.template(data), data.RandomInteger)
+}
+
+func (r MonitorHealthModelSignalDefinitionResource) dynamicOperator(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%s
+
+resource "azurerm_monitor_health_model_signal_definition" "test" {
+  name            = "acctest-sd-%d"
+  health_model_id = azurerm_monitor_health_model.test.id
+
+  azure_resource_metric {
+    metric_namespace = "Microsoft.Storage/storageAccounts"
+    metric_name      = "Availability"
+    aggregation_type = "Average"
+    time_grain       = "PT5M"
+  }
+
+  evaluation_rule {
+    unhealthy {
+      operator         = "Dynamic"
+      sensitivity      = "Medium"
+      look_back_window = "PT15M"
+    }
+  }
+}
+`, r.template(data), data.RandomInteger)
+}
+
+func (r MonitorHealthModelSignalDefinitionResource) prometheusMetricsQuery(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+%s
+
+resource "azurerm_monitor_health_model_signal_definition" "test" {
+  name             = "acctest-sd-%d"
+  health_model_id  = azurerm_monitor_health_model.test.id
+  display_name     = "Prometheus Up"
+  refresh_interval = "PT5M"
+  data_unit        = "Count"
+
+  prometheus_metrics_query {
+    query_text = "up"
+    time_grain = "PT5M"
+  }
+
+  evaluation_rule {
+    unhealthy {
+      operator  = "LessThan"
+      threshold = 1
     }
   }
 }

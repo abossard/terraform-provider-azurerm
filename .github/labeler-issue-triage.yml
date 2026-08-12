@@ -230,7 +230,10 @@ service/mongo-cluster:
   - '### (|New or )Affected Resource\(s\)\/Data Source\(s\)((.|\n)*)azurerm_mongo_cluster((.|\n)*)###'
 
 service/monitor:
-  - '### (|New or )Affected Resource\(s\)\/Data Source\(s\)((.|\n)*)azurerm_monitor_((.|\n)*)###'
+  - '### (|New or )Affected Resource\(s\)\/Data Source\(s\)((.|\n)*)azurerm_(monitor_aad_diagnostic_setting\W+|monitor_action_group\W+|monitor_activity_log_alert\W+|monitor_alert_processing_rule_action_group\W+|monitor_alert_processing_rule_suppression\W+|monitor_alert_prometheus_rule_group\W+|monitor_autoscale_setting\W+|monitor_data_collection_endpoint\W+|monitor_data_collection_rule\W+|monitor_data_collection_rule_association\W+|monitor_diagnostic_categories\W+|monitor_diagnostic_setting\W+|monitor_metric_alert\W+|monitor_private_link_scope\W+|monitor_private_link_scoped_service\W+|monitor_scheduled_query_rules_alert\W+|monitor_scheduled_query_rules_alert_v2\W+|monitor_scheduled_query_rules_log\W+|monitor_smart_detector_alert_rule\W+|monitor_workspace\W+)((.|\n)*)###'
+
+service/monitor-health-models:
+  - '### (|New or )Affected Resource\(s\)\/Data Source\(s\)((.|\n)*)azurerm_monitor_health_model((.|\n)*)###'
 
 service/mssql:
   - '### (|New or )Affected Resource\(s\)\/Data Source\(s\)((.|\n)*)azurerm_(mssql_database\W+|mssql_database_extended_auditing_policy\W+|mssql_database_vulnerability_assessment_rule_baseline\W+|mssql_elasticpool\W+|mssql_failover_group\W+|mssql_firewall_rule\W+|mssql_job\W+|mssql_job_agent\W+|mssql_job_credential\W+|mssql_job_schedule\W+|mssql_job_step\W+|mssql_job_target_group\W+|mssql_outbound_firewall_rule\W+|mssql_server\W+|mssql_server_dns_alias\W+|mssql_server_extended_auditing_policy\W+|mssql_server_microsoft_support_auditing_policy\W+|mssql_server_security_alert_policy\W+|mssql_server_transparent_data_encryption\W+|mssql_server_vulnerability_assessment\W+|mssql_virtual_machine\W+|mssql_virtual_machine_availability_group_listener\W+|mssql_virtual_machine_group\W+|mssql_virtual_network_rule\W+)((.|\n)*)###'

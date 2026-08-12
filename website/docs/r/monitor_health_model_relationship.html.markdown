@@ -17,7 +17,7 @@ A Relationship is an edge in the health graph. The child Entity's health state r
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_monitor_health_model" "example" {
@@ -30,20 +30,9 @@ resource "azurerm_monitor_health_model" "example" {
   }
 }
 
-# The resource provider creates a root Entity named exactly like the Health Model, so declaring an
-# Entity with that name manages the built-in root rather than creating a second one.
-resource "azurerm_monitor_health_model_entity" "root" {
-  name            = azurerm_monitor_health_model.example.name
-  health_model_id = azurerm_monitor_health_model.example.id
-  display_name    = "Workload"
-
-  signal_group {
-    dependency {
-      aggregation_type = "WorstOf"
-    }
-  }
-}
-
+# The resource provider creates a root Entity whose name matches the Health Model, so this
+# Relationship can reference it without declaring it. Declaring an Entity with that name would fail,
+# because it already exists - import it instead if you need to manage its properties.
 resource "azurerm_monitor_health_model_entity" "data_tier" {
   name            = "example-data-tier"
   health_model_id = azurerm_monitor_health_model.example.id
@@ -59,7 +48,7 @@ resource "azurerm_monitor_health_model_entity" "data_tier" {
 resource "azurerm_monitor_health_model_relationship" "example" {
   name               = "r-workload-data-tier"
   health_model_id    = azurerm_monitor_health_model.example.id
-  parent_entity_name = azurerm_monitor_health_model_entity.root.name
+  parent_entity_name = azurerm_monitor_health_model.example.name
   child_entity_name  = azurerm_monitor_health_model_entity.data_tier.name
   display_name       = "Workload depends on Data Tier"
 }

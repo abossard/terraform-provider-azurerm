@@ -12,14 +12,14 @@ Manages an Entity within an Azure Monitor Health Model.
 
 An Entity is a node in the health graph. A leaf Entity derives its health from signals evaluated against an Azure resource, a Log Analytics Workspace or an Azure Monitor Workspace. A grouping Entity derives its health from its child Entities.
 
-~> **Note:** The CloudHealth resource provider automatically creates a root Entity named exactly like the Health Model. To manage that root Entity - rather than creating a second, competing root - declare an Entity whose `name` equals the Health Model's `name`.
+~> **Note:** The CloudHealth resource provider creates a root Entity automatically, named after the Health Model. Because it already exists, declaring an Entity with that name fails with a "resource already exists" error. To manage it with Terraform, write the `resource` block and then `terraform import` it onto the existing root rather than letting Terraform create it, e.g. `terraform import azurerm_monitor_health_model_entity.root /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-resources/providers/Microsoft.CloudHealth/healthmodels/example-model/entities/example-model`. Do not give a second Entity a different name intending it as the root: that creates a competing root rather than replacing the generated one.
 
 ## Example Usage
 
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_storage_account" "example" {
@@ -170,7 +170,7 @@ A `signal` block within `azure_resource` supports the following:
 
 * `time_grain` - (Required) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`.
 
-~> **Note:** `time_grain` must be a grain the target metric actually supports, and `refresh_interval` must be less than or equal to `time_grain`. Neither constraint is caught at plan time - both are rejected by the resource provider on apply.
+~> **Note:** `time_grain` must be a grain the target metric supports, and `refresh_interval` must be less than or equal to `time_grain`. Terraform cannot check either constraint at plan time; the resource provider rejects both on apply.
 
 * `evaluation_rule` - (Required) An `evaluation_rule` block as defined below.
 
@@ -272,7 +272,7 @@ An `unhealthy` or `degraded` block supports the following:
 
 A `dependency` block supports the following:
 
-* `aggregation_type` - (Required) How the health states of child Entities roll up into this Entity. Possible values are `WorstOf`, `MinHealthy` and `MaxNotHealthy`. Defaults to `WorstOf`.
+* `aggregation_type` - (Required) How the health states of child Entities roll up into this Entity. Possible values are `WorstOf`, `MinHealthy` and `MaxNotHealthy`.
 
 * `unit` - (Optional) The unit of the aggregation thresholds. Possible values are `Absolute` and `Percentage`. This is required when `aggregation_type` is `MinHealthy` or `MaxNotHealthy`.
 

@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/parse"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/relationships"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -90,15 +92,21 @@ func TestAccMonitorHealthModelRelationship_update(t *testing.T) {
 	})
 }
 
-func (r MonitorHealthModelRelationshipResource) Exists(_ context.Context, _ *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.RelationshipID(state.ID)
+func (r MonitorHealthModelRelationshipResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := relationships.ParseRelationshipID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: replace with `clients.CloudHealth.RelationshipsClient.Get(ctx, *id)` once a stable
-	// `Microsoft.CloudHealth` API version ships and `hashicorp/go-azure-sdk` is vendored.
-	return nil, fmt.Errorf("checking for %s: %w", id, errSDKUnavailable)
+	resp, err := clients.CloudHealth.Relationships.Get(ctx, *id)
+	if err != nil {
+		if response.WasNotFound(resp.HttpResponse) {
+			return pointer.To(false), nil
+		}
+		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
+	}
+
+	return pointer.To(resp.Model != nil), nil
 }
 
 func (r MonitorHealthModelRelationshipResource) template(data acceptance.TestData) string {
@@ -118,6 +126,9 @@ resource "azurerm_storage_account" "test" {
   location                 = azurerm_resource_group.test.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
+
+  public_network_access_enabled = false
+  shared_access_key_enabled     = false
 }
 
 resource "azurerm_monitor_health_model" "test" {
@@ -136,10 +147,8 @@ resource "azurerm_monitor_health_model_authentication_setting" "test" {
   managed_identity = "SystemAssigned"
 }
 
-# The CloudHealth resource provider creates a root entity named exactly like the health model, so the
-# parent entity below manages that built-in root rather than creating a second, competing root.
 resource "azurerm_monitor_health_model_entity" "parent" {
-  name            = azurerm_monitor_health_model.test.name
+  name            = "acctest-entity-parent-%[1]d"
   health_model_id = azurerm_monitor_health_model.test.id
   display_name    = "Workload"
 

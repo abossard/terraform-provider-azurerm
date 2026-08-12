@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/parse"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/discoveryrules"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -103,15 +105,21 @@ func TestAccMonitorHealthModelDiscoveryRule_applicationInsightsTopology(t *testi
 	})
 }
 
-func (r MonitorHealthModelDiscoveryRuleResource) Exists(_ context.Context, _ *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.DiscoveryRuleID(state.ID)
+func (r MonitorHealthModelDiscoveryRuleResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := discoveryrules.ParseDiscoveryRuleID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: replace with `clients.CloudHealth.DiscoveryRulesClient.Get(ctx, *id)` once a stable
-	// `Microsoft.CloudHealth` API version ships and `hashicorp/go-azure-sdk` is vendored.
-	return nil, fmt.Errorf("checking for %s: %w", id, errSDKUnavailable)
+	resp, err := clients.CloudHealth.DiscoveryRules.Get(ctx, *id)
+	if err != nil {
+		if response.WasNotFound(resp.HttpResponse) {
+			return pointer.To(false), nil
+		}
+		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
+	}
+
+	return pointer.To(resp.Model != nil), nil
 }
 
 func (r MonitorHealthModelDiscoveryRuleResource) template(data acceptance.TestData) string {

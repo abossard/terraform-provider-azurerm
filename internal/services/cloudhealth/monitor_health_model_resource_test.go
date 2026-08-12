@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/parse"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/healthmodels"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -87,18 +89,21 @@ func TestAccMonitorHealthModel_update(t *testing.T) {
 	})
 }
 
-func (r MonitorHealthModelResource) Exists(_ context.Context, _ *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.HealthModelID(state.ID)
+func (r MonitorHealthModelResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
+	id, err := healthmodels.ParseHealthModelID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: once a stable `Microsoft.CloudHealth` API version ships and `hashicorp/go-azure-sdk` is
-	// vendored, replace this with:
-	//   resp, err := clients.CloudHealth.HealthModelsClient.Get(ctx, *id)
-	//   ...
-	//   return pointer.To(resp.Model != nil), nil
-	return nil, fmt.Errorf("checking for %s: %w", id, errSDKUnavailable)
+	resp, err := clients.CloudHealth.HealthModels.Get(ctx, *id)
+	if err != nil {
+		if response.WasNotFound(resp.HttpResponse) {
+			return pointer.To(false), nil
+		}
+		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
+	}
+
+	return pointer.To(resp.Model != nil), nil
 }
 
 func (r MonitorHealthModelResource) template(data acceptance.TestData) string {

@@ -17,7 +17,7 @@ A Signal Definition is a reusable signal template. Entities reference it by name
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_monitor_health_model" "example" {
@@ -94,7 +94,7 @@ An `azure_resource_metric` block supports the following:
 
 * `time_grain` - (Required) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`.
 
-~> **Note:** `time_grain` must be a grain the target metric actually supports, and `refresh_interval` must be less than or equal to `time_grain`. Neither constraint is caught at plan time - both are rejected by the resource provider on apply.
+~> **Note:** `time_grain` must be a grain the target metric supports, and `refresh_interval` must be less than or equal to `time_grain`. Terraform cannot check either constraint at plan time; the resource provider rejects both on apply.
 
 * `dimension_filter` - (Optional) A filter applied to the metric's dimensions, for example `ResponseType eq 'ServerBusyError'`.
 

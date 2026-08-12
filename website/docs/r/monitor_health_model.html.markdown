@@ -15,7 +15,7 @@ Manages an Azure Monitor Health Model.
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_monitor_health_model" "example" {
@@ -47,7 +47,7 @@ The following arguments are supported:
 
 * `identity` - (Optional) An `identity` block as defined below.
 
-~> **Note:** The identity assigned to the Health Model requires the `Reader` role over every scope it monitors. `Monitoring Reader` is not sufficient - signals evaluate to `Unknown` without `Reader`.
+~> **Note:** The Health Model's identity needs the `Reader` role over every scope it monitors. `Monitoring Reader` falls short: without `Reader`, every signal evaluates to `Unknown`.
 
 * `tags` - (Optional) A mapping of tags which should be assigned to the Health Model.
 

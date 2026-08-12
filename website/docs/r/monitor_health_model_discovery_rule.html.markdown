@@ -10,14 +10,14 @@ description: |-
 
 Manages a Discovery Rule within an Azure Monitor Health Model.
 
-A Discovery Rule automatically populates a Health Model with Entities - and optionally Relationships - based on an Azure Resource Graph query or an Application Insights topology.
+A Discovery Rule populates a Health Model with Entities, and optionally Relationships, from an Azure Resource Graph query or an Application Insights topology.
 
 ## Example Usage
 
 ```hcl
 resource "azurerm_resource_group" "example" {
   name     = "example-resources"
-  location = "West Europe"
+  location = "North Europe"
 }
 
 resource "azurerm_monitor_health_model" "example" {
