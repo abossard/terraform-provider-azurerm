@@ -11,14 +11,13 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonschema"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/insights/2023-01-01/actiongroupsapis"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/monitor/2023-04-03/azuremonitorworkspaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/operationalinsights/2020-08-01/workspaces"
 	"github.com/hashicorp/terraform-provider-azurerm/helpers/azure"
-	helpersValidate "github.com/hashicorp/terraform-provider-azurerm/helpers/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
-	monitorValidate "github.com/hashicorp/terraform-provider-azurerm/internal/services/monitor/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
@@ -288,7 +287,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
 												Required:     true,
-												ValidateFunc: helpersValidate.ISO8601Duration,
+												ValidateFunc: validation.ISO8601Duration,
 											},
 
 											"evaluation_rule": evaluationRuleSchema(),
@@ -371,7 +370,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: helpersValidate.ISO8601Duration,
+												ValidateFunc: validation.ISO8601Duration,
 											},
 
 											"value_column_name": {
@@ -452,7 +451,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: helpersValidate.ISO8601Duration,
+												ValidateFunc: validation.ISO8601Duration,
 											},
 
 											"display_name": {
@@ -568,7 +567,7 @@ func alertConfigurationSchema() *pluginsdk.Schema {
 					MaxItems: 5,
 					Elem: &pluginsdk.Schema{
 						Type:         pluginsdk.TypeString,
-						ValidateFunc: monitorValidate.ActionGroupID,
+						ValidateFunc: validation.AsGeneratedID(actiongroupsapis.ParseActionGroupIDInsensitively),
 					},
 				},
 			},

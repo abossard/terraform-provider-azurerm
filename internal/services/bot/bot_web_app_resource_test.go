@@ -9,14 +9,24 @@ import (
 	"testing"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
+	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/bot/parse"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
 type BotWebAppResource struct{}
+
+func TestAccBotWebApp_regressionTest(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_bot_web_app", "test")
+	r := BotWebAppResource{}
+	data.ResourceRegressionTest(t, r, []acceptance.TestStep{
+		{
+			Config: r.completeConfig(data),
+		},
+	}, "")
+}
 
 func TestAccBotWebApp_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_bot_web_app", "test")
@@ -93,12 +103,12 @@ func TestAccBotWebApp_userAssignedMSI(t *testing.T) {
 }
 
 func (r BotWebAppResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := parse.BotServiceID(state.ID)
+	id, err := commonids.ParseBotServiceID(state.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := clients.Bot.BotClient.Get(ctx, id.ResourceGroup, id.Name)
+	resp, err := clients.Bot.BotClient.Get(ctx, id.ResourceGroupName, id.BotServiceName)
 	if err != nil {
 		return nil, fmt.Errorf("retrieving %s: %v", id.String(), err)
 	}
@@ -185,7 +195,7 @@ resource "azurerm_bot_web_app" "test" {
   sku                     = "F0"
 
   endpoint                              = "https://example.com"
-  developer_app_insights_api_key        = azurerm_application_insights_api_key.test.api_key
+  developer_app_insights_api_key        = "IamAFakeKeyToTestTheAttribute00000000000"
   developer_app_insights_application_id = azurerm_application_insights.test.app_id
   developer_app_insights_key            = azurerm_application_insights.test.instrumentation_key
 
