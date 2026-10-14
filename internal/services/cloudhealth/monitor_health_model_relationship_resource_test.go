@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/relationships"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/relationships"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -63,7 +63,7 @@ func TestAccMonitorHealthModelRelationship_complete(t *testing.T) {
 
 // TestAccMonitorHealthModelRelationship_update covers the only updatable property on this resource.
 // `parentEntityName` and `childEntityName` are declared `x-ms-mutability: ["read", "create"]` in the
-// 2026-05-01-preview swagger, so changing either must force a new resource rather than update in place.
+// 2026-11-01 swagger, so changing either must force a new resource rather than update in place.
 func TestAccMonitorHealthModelRelationship_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_relationship", "test")
 	r := MonitorHealthModelRelationshipResource{}

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/authenticationsettings"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/authenticationsettings"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -90,7 +90,7 @@ func TestAccMonitorHealthModelAuthenticationSetting_update(t *testing.T) {
 }
 
 func (r MonitorHealthModelAuthenticationSettingResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := authenticationsettings.ParseAuthenticationSettingID(state.ID)
+	id, err := authenticationsettings.ParseAuthenticationsettingID(state.ID)
 	if err != nil {
 		return nil, err
 	}

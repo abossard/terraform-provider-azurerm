@@ -1,13 +1,12 @@
 # `Microsoft.CloudHealth` SDK
 
 This directory holds a generated Azure Resource Manager client for `Microsoft.CloudHealth`, API
-version `2026-05-01-preview`.
+version `2026-11-01` (stable).
 
 ## Why it lives here
 
-`Microsoft.CloudHealth` only publishes preview API versions, so `hashicorp/pandora` has not yet
-emitted a package for it under `github.com/hashicorp/go-azure-sdk/resource-manager`. The provider
-resources in `internal/services/cloudhealth` need a client today, so one is vendored in-repo.
+`github.com/hashicorp/go-azure-sdk/resource-manager` does not yet include `Microsoft.CloudHealth`.
+The provider resources use this local SDK until the upstream package is available.
 
 ## Shape
 
@@ -16,8 +15,8 @@ The tree is generated in the exact shape `pandora`'s `generator-go-sdk` emits, s
 other change:
 
 ```
-internal/services/cloudhealth/sdk/2026-05-01-preview/<package>/
-  →  github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-05-01-preview/<package>/
+internal/services/cloudhealth/sdk/2026-11-01/<package>/
+  →  github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/<package>/
 ```
 
 Consequences of that, which are deliberate and should be preserved:
@@ -34,5 +33,11 @@ Consequences of that, which are deliberate and should be preserved:
 
 ## Source of truth
 
-`Azure/azure-rest-api-specs`, at
-`specification/cloudhealth/resource-manager/Microsoft.CloudHealth/CloudHealth/preview/2026-05-01-preview/cloudhealth.json`.
+`Azure/azure-rest-api-specs` commit `a3be4b61f3eba3138075131e2669ab43e7841eaf`, at
+`specification/cloudhealth/resource-manager/Microsoft.CloudHealth/CloudHealth/stable/2026-11-01/cloudhealth.json`.
+
+Generated with `hashicorp/pandora` commit `ae083a91e9513b6ff31ab09965a31a0d9d70b1dd`.
+The six service packages include the generator's resource ID tests without manual changes.
+
+The stable API removes `lookBackWindow`; the provider no longer accepts `look_back_window`.
+Dependency aggregation supports `BestOf`, which does not accept thresholds or a unit.

@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 )
 
 // validateDependencyRawConfig rejects the `dependency` combinations the service refuses, so the
@@ -18,10 +18,9 @@ import (
 // is silently dropped and no perpetual diff is possible. It exists because a plan-time refusal is
 // cheaper than a failed apply, not because the API is permissive here.
 //
-// The two constraints, both confirmed against `2026-05-01-preview` (see the blueprint's C4
-// evidence), are complementary:
+// The two constraints are complementary:
 //
-//	WorstOf                    -> `unit`, `unhealthy_threshold` and `degraded_threshold` are refused
+//	WorstOf / BestOf            -> `unit`, `unhealthy_threshold` and `degraded_threshold` are refused
 //	MinHealthy / MaxNotHealthy -> `unit` and `unhealthy_threshold` are required
 //
 // `degraded_threshold` stays optional in every mode; the swagger describes it as the absence of a
@@ -66,10 +65,10 @@ func validateDependencyAggregation(input cty.Value) error {
 		return !input.GetAttr(name).IsNull()
 	}
 
-	if aggregationType.AsString() == string(entities.DependenciesAggregationTypeWorstOf) {
+	if aggregationType.AsString() == string(entities.AggregationTypeWorstOf) || aggregationType.AsString() == string(entities.AggregationTypeBestOf) {
 		for _, name := range []string{"unit", "unhealthy_threshold", "degraded_threshold"} {
 			if isConfigured(name) {
-				return fmt.Errorf("`%s` cannot be set in `signal_group.dependency` when `aggregation_type` is `%s` - thresholds and units only apply to the counting aggregations `%s` and `%s`", name, entities.DependenciesAggregationTypeWorstOf, entities.DependenciesAggregationTypeMinHealthy, entities.DependenciesAggregationTypeMaxNotHealthy)
+				return fmt.Errorf("`%s` cannot be set in `signal_group.dependency` when `aggregation_type` is `%s` - thresholds and units only apply to the counting aggregations `%s` and `%s`", name, aggregationType.AsString(), entities.AggregationTypeMinHealthy, entities.AggregationTypeMaxNotHealthy)
 			}
 		}
 

@@ -3,12 +3,9 @@
 
 package validate
 
-// The enum value sets below are transcribed from the `2026-05-01-preview` Microsoft.CloudHealth
-// swagger at `Azure/azure-rest-api-specs`. They exist because no `hashicorp/go-azure-sdk` package has
-// been generated for `Microsoft.CloudHealth` yet, so the usual `<sdkpackage>.PossibleValuesForX()`
-// helpers are unavailable. The function names mirror that SDK convention so that, once a stable API
-// version ships and the SDK is vendored, each call site can be repointed by changing the package
-// qualifier only.
+// The enum value sets below are transcribed from the `2026-11-01` Microsoft.CloudHealth
+// swagger at `Azure/azure-rest-api-specs`. The function names mirror the SDK convention so each
+// call site can be repointed when CloudHealth is available in the vendored `hashicorp/go-azure-sdk`.
 
 // PossibleValuesForAuthenticationKind returns the values of `#/definitions/AuthenticationKind`.
 func PossibleValuesForAuthenticationKind() []string {
@@ -30,13 +27,14 @@ func PossibleValuesForEntityImpact() []string {
 // `#/definitions/DependenciesSignalGroupV2/properties/aggregationType`.
 func PossibleValuesForDependenciesAggregationType() []string {
 	return []string{
+		"BestOf",
 		"MaxNotHealthy",
 		"MinHealthy",
 		"WorstOf",
 	}
 }
 
-// PossibleValuesForDependenciesAggregationUnit returns the values of `#/definitions/DependenciesAggregationUnit`.
+// PossibleValuesForDependenciesAggregationUnit returns the values of `#/definitions/AggregationUnit`.
 func PossibleValuesForDependenciesAggregationUnit() []string {
 	return []string{
 		"Absolute",
@@ -100,16 +98,6 @@ func PossibleValuesForDynamicThresholdSensitivity() []string {
 		"High",
 		"Low",
 		"Medium",
-	}
-}
-
-// PossibleValuesForLookBackWindow returns the values of `#/definitions/LookBackWindow`.
-func PossibleValuesForLookBackWindow() []string {
-	return []string{
-		"PT1H",
-		"PT5M",
-		"PT15M",
-		"PT30M",
 	}
 }
 

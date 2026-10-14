@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -21,10 +21,9 @@ type EvaluationRuleModel struct {
 }
 
 type ThresholdRuleModel struct {
-	Operator       string  `tfschema:"operator"`
-	Threshold      float64 `tfschema:"threshold"`
-	Sensitivity    string  `tfschema:"sensitivity"`
-	LookBackWindow string  `tfschema:"look_back_window"`
+	Operator    string  `tfschema:"operator"`
+	Threshold   float64 `tfschema:"threshold"`
+	Sensitivity string  `tfschema:"sensitivity"`
 }
 
 func evaluationRuleSchema() *pluginsdk.Schema {
@@ -65,12 +64,6 @@ func thresholdRuleSchema(required bool) *pluginsdk.Schema {
 					Optional:     true,
 					ValidateFunc: validation.StringInSlice(validate.PossibleValuesForDynamicThresholdSensitivity(), false),
 				},
-
-				"look_back_window": {
-					Type:         pluginsdk.TypeString,
-					Optional:     true,
-					ValidateFunc: validation.StringInSlice(validate.PossibleValuesForLookBackWindow(), false),
-				},
 			},
 		},
 	}
@@ -103,7 +96,7 @@ func expandThresholdRule(input ThresholdRuleModel) entities.ThresholdRuleV2 {
 
 	// Everything the user configured is forwarded, whether or not it suits the operator. The service
 	// rejects each mismatch by name (`DynamicThresholdNotAllowed` for a `threshold` alongside
-	// `Dynamic`, and an `ObjectInvalidProperty` naming `sensitivity` / `lookBackWindow` alongside any
+	// `Dynamic`, and an `ObjectInvalidProperty` naming `sensitivity` alongside any
 	// other operator), so forwarding turns a mismatch into a loud apply-time failure. Dropping it
 	// instead would discard configuration the Read side cannot restore, leaving a permanent diff.
 	// CustomizeDiff still rejects both combinations at plan time whenever `operator` is known; this
@@ -111,11 +104,6 @@ func expandThresholdRule(input ThresholdRuleModel) entities.ThresholdRuleV2 {
 	if input.Sensitivity != "" {
 		sensitivity := entities.DynamicThresholdSensitivity(input.Sensitivity)
 		output.Sensitivity = &sensitivity
-	}
-
-	if input.LookBackWindow != "" {
-		lookBackWindow := entities.LookBackWindow(input.LookBackWindow)
-		output.LookBackWindow = &lookBackWindow
 	}
 
 	// `threshold` is a `TypeFloat`, so once decoded an explicit `0` and an absent value are the same
@@ -157,10 +145,6 @@ func flattenThresholdRule(input entities.ThresholdRuleV2) ThresholdRuleModel {
 
 	if input.Sensitivity != nil {
 		output.Sensitivity = string(*input.Sensitivity)
-	}
-
-	if input.LookBackWindow != nil {
-		output.LookBackWindow = string(*input.LookBackWindow)
 	}
 
 	return output
@@ -251,8 +235,8 @@ func isRawConfigBlock(input cty.Value) bool {
 }
 
 // validateEvaluationRuleRawConfig rejects the `evaluation_rule` combinations the service silently
-// ignores. `threshold` is only honoured for the static operators and `sensitivity` /
-// `look_back_window` only for `Dynamic`, so a configuration that sets the wrong one never
+// ignores. `threshold` is only honoured for the static operators and `sensitivity`
+// only for `Dynamic`, so a configuration that sets the wrong one never
 // converges: the value is dropped on the way out and comes back absent on the next read, leaving a
 // permanent diff.
 func validateEvaluationRuleRawConfig(input cty.Value) error {
@@ -313,16 +297,14 @@ func validateThresholdRuleRawConfig(input cty.Value, blockName string) error {
 
 	if operator.AsString() == string(entities.SignalOperatorDynamic) {
 		if isConfigured("threshold") {
-			return fmt.Errorf("`threshold` cannot be set in `evaluation_rule.%s` when `operator` is `%s` - the service derives the threshold itself and only `sensitivity` and `look_back_window` apply", blockName, entities.SignalOperatorDynamic)
+			return fmt.Errorf("`threshold` cannot be set in `evaluation_rule.%s` when `operator` is `%s` - the service derives the threshold itself and only `sensitivity` applies", blockName, entities.SignalOperatorDynamic)
 		}
 
 		return nil
 	}
 
-	for _, name := range []string{"sensitivity", "look_back_window"} {
-		if isConfigured(name) {
-			return fmt.Errorf("`%s` cannot be set in `evaluation_rule.%s` when `operator` is `%s` - it only applies when `operator` is `%s`", name, blockName, operator.AsString(), entities.SignalOperatorDynamic)
-		}
+	if isConfigured("sensitivity") {
+		return fmt.Errorf("`sensitivity` cannot be set in `evaluation_rule.%s` when `operator` is `%s` - it only applies when `operator` is `%s`", blockName, operator.AsString(), entities.SignalOperatorDynamic)
 	}
 
 	return nil

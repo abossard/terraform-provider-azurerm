@@ -6,7 +6,8 @@ package cloudhealth
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
 // TestExpandThresholdRule covers the apply-time half of the `evaluation_rule` contract. `CustomizeDiff`
@@ -20,7 +21,6 @@ func TestExpandThresholdRule(t *testing.T) {
 		input              ThresholdRuleModel
 		expectedThreshold  *float64
 		expectedSensitvity *entities.DynamicThresholdSensitivity
-		expectedLookBack   *entities.LookBackWindow
 	}{
 		{
 			name:              "static operator sends threshold",
@@ -33,10 +33,9 @@ func TestExpandThresholdRule(t *testing.T) {
 			expectedThreshold: pointerToFloat(0),
 		},
 		{
-			name:               "dynamic operator sends sensitivity and look back window",
-			input:              ThresholdRuleModel{Operator: "Dynamic", Sensitivity: "Medium", LookBackWindow: "PT15M"},
+			name:               "dynamic operator sends sensitivity",
+			input:              ThresholdRuleModel{Operator: "Dynamic", Sensitivity: "Medium"},
 			expectedSensitvity: pointerToSensitivity(entities.DynamicThresholdSensitivityMedium),
-			expectedLookBack:   pointerToLookBackWindow(entities.LookBackWindowPTOneFiveM),
 		},
 		{
 			name:  "dynamic operator omits an absent threshold",
@@ -56,11 +55,10 @@ func TestExpandThresholdRule(t *testing.T) {
 		{
 			name: "static operator forwards a configured sensitivity for the service to reject",
 			input: ThresholdRuleModel{
-				Operator: "LessThan", Threshold: 99, Sensitivity: "Medium", LookBackWindow: "PT15M",
+				Operator: "LessThan", Threshold: 99, Sensitivity: "Medium",
 			},
 			expectedThreshold:  pointerToFloat(99),
 			expectedSensitvity: pointerToSensitivity(entities.DynamicThresholdSensitivityMedium),
-			expectedLookBack:   pointerToLookBackWindow(entities.LookBackWindowPTOneFiveM),
 		},
 	}
 
@@ -83,16 +81,30 @@ func TestExpandThresholdRule(t *testing.T) {
 				expectedSensitivity = pointerToString(string(*v.expectedSensitvity))
 			}
 			assertStringPointer(t, "sensitivity", expectedSensitivity, actualSensitivity)
+		})
+	}
+}
 
-			var actualLookBack *string
-			if actual.LookBackWindow != nil {
-				actualLookBack = pointerToString(string(*actual.LookBackWindow))
+func TestThresholdRuleSchemaStableAPI(t *testing.T) {
+	testData := []struct {
+		name     string
+		required bool
+	}{
+		{name: "unhealthy", required: true},
+		{name: "degraded", required: false},
+	}
+
+	for _, v := range testData {
+		t.Run(v.name, func(t *testing.T) {
+			schema := thresholdRuleSchema(v.required)
+			resource, ok := schema.Elem.(*pluginsdk.Resource)
+			if !ok {
+				t.Fatalf("expected a threshold resource but got %T", schema.Elem)
 			}
-			var expectedLookBack *string
-			if v.expectedLookBack != nil {
-				expectedLookBack = pointerToString(string(*v.expectedLookBack))
+
+			if _, exists := resource.Schema["look_back_window"]; exists {
+				t.Fatal("look_back_window is not supported by the 2026-11-01 stable API")
 			}
-			assertStringPointer(t, "look_back_window", expectedLookBack, actualLookBack)
 		})
 	}
 }
@@ -132,9 +144,5 @@ func pointerToString(input string) *string {
 }
 
 func pointerToSensitivity(input entities.DynamicThresholdSensitivity) *entities.DynamicThresholdSensitivity {
-	return &input
-}
-
-func pointerToLookBackWindow(input entities.LookBackWindow) *entities.LookBackWindow {
 	return &input
 }

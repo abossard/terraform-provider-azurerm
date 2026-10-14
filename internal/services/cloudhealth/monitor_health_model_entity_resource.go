@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/operationalinsights/2020-08-01/workspaces"
 	"github.com/hashicorp/terraform-provider-azurerm/helpers/azure"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -162,7 +162,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: entities.ValidateHealthModelID,
+			ValidateFunc: entities.ValidateHealthmodelID,
 		},
 
 		"display_name": {
@@ -615,12 +615,12 @@ func (r HealthModelEntityResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			healthModelId, err := entities.ParseHealthModelID(config.HealthModelId)
+			healthModelId, err := entities.ParseHealthmodelID(config.HealthModelId)
 			if err != nil {
 				return err
 			}
 
-			id := entities.NewEntityID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthModelName, config.Name)
+			id := entities.NewEntityID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -671,7 +671,7 @@ func (HealthModelEntityResource) Read() sdk.ResourceFunc {
 
 			state := HealthModelEntityResourceModel{
 				Name:          id.EntityName,
-				HealthModelId: entities.NewHealthModelID(id.SubscriptionId, id.ResourceGroupName, id.HealthModelName).ID(),
+				HealthModelId: entities.NewHealthmodelID(id.SubscriptionId, id.ResourceGroupName, id.HealthmodelName).ID(),
 			}
 
 			if model := resp.Model; model != nil && model.Properties != nil {

@@ -19,7 +19,6 @@ func TestPossibleValuesAreUsableInStringInSlice(t *testing.T) {
 		"DependenciesAggregationUnit": PossibleValuesForDependenciesAggregationUnit(),
 		"DiscoveryRuleKind":           PossibleValuesForDiscoveryRuleKind(),
 		"DynamicThresholdSensitivity": PossibleValuesForDynamicThresholdSensitivity(),
-		"LookBackWindow":              PossibleValuesForLookBackWindow(),
 		"MetricAggregationType":       PossibleValuesForMetricAggregationType(),
 		"RefreshInterval":             PossibleValuesForRefreshInterval(),
 		"SignalKind":                  PossibleValuesForSignalKind(),
@@ -29,11 +28,10 @@ func TestPossibleValuesAreUsableInStringInSlice(t *testing.T) {
 	expectedCounts := map[string]int{
 		"AlertSeverity":               5,
 		"AuthenticationKind":          1,
-		"DependenciesAggregationType": 3,
+		"DependenciesAggregationType": 4,
 		"DependenciesAggregationUnit": 2,
 		"DiscoveryRuleKind":           2,
 		"DynamicThresholdSensitivity": 3,
-		"LookBackWindow":              4,
 		"MetricAggregationType":       6,
 		"RefreshInterval":             7,
 		"SignalKind":                  4,
@@ -43,7 +41,7 @@ func TestPossibleValuesAreUsableInStringInSlice(t *testing.T) {
 	for name, values := range enums {
 		t.Run(name, func(t *testing.T) {
 			if len(values) != expectedCounts[name] {
-				t.Fatalf("expected %s to have %d values from the 2026-05-01-preview swagger, got %d: %v", name, expectedCounts[name], len(values), values)
+				t.Fatalf("expected %s to have %d values from the 2026-11-01 swagger, got %d: %v", name, expectedCounts[name], len(values), values)
 			}
 
 			seen := make(map[string]struct{}, len(values))

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/discoveryrules"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/discoveryrules"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -90,7 +90,7 @@ func TestAccMonitorHealthModelDiscoveryRule_update(t *testing.T) {
 }
 
 // TestAccMonitorHealthModelDiscoveryRule_applicationInsightsTopology covers the second
-// `DiscoveryRuleKind` discriminator value from the 2026-05-01-preview swagger.
+// `DiscoveryRuleKind` discriminator value from the 2026-11-01 swagger.
 func TestAccMonitorHealthModelDiscoveryRule_applicationInsightsTopology(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_discovery_rule", "test")
 	r := MonitorHealthModelDiscoveryRuleResource{}
@@ -106,7 +106,7 @@ func TestAccMonitorHealthModelDiscoveryRule_applicationInsightsTopology(t *testi
 }
 
 func (r MonitorHealthModelDiscoveryRuleResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := discoveryrules.ParseDiscoveryRuleID(state.ID)
+	id, err := discoveryrules.ParseDiscoveryruleID(state.ID)
 	if err != nil {
 		return nil, err
 	}

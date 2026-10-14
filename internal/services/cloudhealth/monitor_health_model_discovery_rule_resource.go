@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	components "github.com/hashicorp/go-azure-sdk/resource-manager/applicationinsights/2020-02-02/componentsapis"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/discoveryrules"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/discoveryrules"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -44,7 +44,7 @@ func (HealthModelDiscoveryRuleResource) ModelObject() interface{} {
 }
 
 func (HealthModelDiscoveryRuleResource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
-	return discoveryrules.ValidateDiscoveryRuleID
+	return discoveryrules.ValidateDiscoveryruleID
 }
 
 func (HealthModelDiscoveryRuleResource) Arguments() map[string]*pluginsdk.Schema {
@@ -62,7 +62,7 @@ func (HealthModelDiscoveryRuleResource) Arguments() map[string]*pluginsdk.Schema
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: discoveryrules.ValidateHealthModelID,
+			ValidateFunc: discoveryrules.ValidateHealthmodelID,
 		},
 
 		"authentication_setting_name": {
@@ -133,12 +133,12 @@ func (r HealthModelDiscoveryRuleResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			healthModelId, err := discoveryrules.ParseHealthModelID(config.HealthModelId)
+			healthModelId, err := discoveryrules.ParseHealthmodelID(config.HealthModelId)
 			if err != nil {
 				return err
 			}
 
-			id := discoveryrules.NewDiscoveryRuleID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthModelName, config.Name)
+			id := discoveryrules.NewDiscoveryruleID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -174,7 +174,7 @@ func (HealthModelDiscoveryRuleResource) Read() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.DiscoveryRules
 
-			id, err := discoveryrules.ParseDiscoveryRuleID(metadata.ResourceData.Id())
+			id, err := discoveryrules.ParseDiscoveryruleID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -188,15 +188,15 @@ func (HealthModelDiscoveryRuleResource) Read() sdk.ResourceFunc {
 			}
 
 			state := HealthModelDiscoveryRuleResourceModel{
-				Name:          id.DiscoveryRuleName,
-				HealthModelId: discoveryrules.NewHealthModelID(id.SubscriptionId, id.ResourceGroupName, id.HealthModelName).ID(),
+				Name:          id.DiscoveryruleName,
+				HealthModelId: discoveryrules.NewHealthmodelID(id.SubscriptionId, id.ResourceGroupName, id.HealthmodelName).ID(),
 			}
 
 			if model := resp.Model; model != nil && model.Properties != nil {
 				props := *model.Properties
 
 				state.AuthenticationSettingName = props.AuthenticationSetting
-				state.EntityName = props.EntityName
+				state.EntityName = pointer.From(props.EntityName)
 				state.DisplayName = pointer.From(props.DisplayName)
 				state.RelationshipDiscoveryEnabled = props.DiscoverRelationships == discoveryrules.DiscoveryRuleRelationshipDiscoveryBehaviorEnabled
 				state.RecommendedSignalsEnabled = props.AddRecommendedSignals == discoveryrules.DiscoveryRuleRecommendedSignalsBehaviorEnabled
@@ -229,7 +229,7 @@ func (HealthModelDiscoveryRuleResource) Update() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.DiscoveryRules
 
-			id, err := discoveryrules.ParseDiscoveryRuleID(metadata.ResourceData.Id())
+			id, err := discoveryrules.ParseDiscoveryruleID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -263,7 +263,7 @@ func (HealthModelDiscoveryRuleResource) Delete() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.DiscoveryRules
 
-			id, err := discoveryrules.ParseDiscoveryRuleID(metadata.ResourceData.Id())
+			id, err := discoveryrules.ParseDiscoveryruleID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}

@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonschema"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/signaldefinitions"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/signaldefinitions"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -65,7 +65,7 @@ func (HealthModelSignalDefinitionResource) ModelObject() interface{} {
 }
 
 func (HealthModelSignalDefinitionResource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
-	return signaldefinitions.ValidateSignalDefinitionID
+	return signaldefinitions.ValidateSignaldefinitionID
 }
 
 func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Schema {
@@ -83,7 +83,7 @@ func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Sch
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: signaldefinitions.ValidateHealthModelID,
+			ValidateFunc: signaldefinitions.ValidateHealthmodelID,
 		},
 
 		"evaluation_rule": evaluationRuleSchema(),
@@ -228,12 +228,12 @@ func (r HealthModelSignalDefinitionResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			healthModelId, err := signaldefinitions.ParseHealthModelID(config.HealthModelId)
+			healthModelId, err := signaldefinitions.ParseHealthmodelID(config.HealthModelId)
 			if err != nil {
 				return err
 			}
 
-			id := signaldefinitions.NewSignalDefinitionID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthModelName, config.Name)
+			id := signaldefinitions.NewSignaldefinitionID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -269,7 +269,7 @@ func (HealthModelSignalDefinitionResource) Read() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.SignalDefinitions
 
-			id, err := signaldefinitions.ParseSignalDefinitionID(metadata.ResourceData.Id())
+			id, err := signaldefinitions.ParseSignaldefinitionID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -283,8 +283,8 @@ func (HealthModelSignalDefinitionResource) Read() sdk.ResourceFunc {
 			}
 
 			state := HealthModelSignalDefinitionResourceModel{
-				Name:          id.SignalDefinitionName,
-				HealthModelId: signaldefinitions.NewHealthModelID(id.SubscriptionId, id.ResourceGroupName, id.HealthModelName).ID(),
+				Name:          id.SignaldefinitionName,
+				HealthModelId: signaldefinitions.NewHealthmodelID(id.SubscriptionId, id.ResourceGroupName, id.HealthmodelName).ID(),
 			}
 
 			if model := resp.Model; model != nil {
@@ -304,7 +304,7 @@ func (HealthModelSignalDefinitionResource) Update() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.SignalDefinitions
 
-			id, err := signaldefinitions.ParseSignalDefinitionID(metadata.ResourceData.Id())
+			id, err := signaldefinitions.ParseSignaldefinitionID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -338,7 +338,7 @@ func (HealthModelSignalDefinitionResource) Delete() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.SignalDefinitions
 
-			id, err := signaldefinitions.ParseSignalDefinitionID(metadata.ResourceData.Id())
+			id, err := signaldefinitions.ParseSignaldefinitionID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -500,9 +500,6 @@ func expandSignalDefinitionThresholdRule(input ThresholdRuleModel) signaldefinit
 		if input.Sensitivity != "" {
 			output.Sensitivity = pointer.To(signaldefinitions.DynamicThresholdSensitivity(input.Sensitivity))
 		}
-		if input.LookBackWindow != "" {
-			output.LookBackWindow = pointer.To(signaldefinitions.LookBackWindow(input.LookBackWindow))
-		}
 		return output
 	}
 
@@ -531,10 +528,6 @@ func flattenSignalDefinitionThresholdRule(input signaldefinitions.ThresholdRuleV
 
 	if input.Sensitivity != nil {
 		output.Sensitivity = string(*input.Sensitivity)
-	}
-
-	if input.LookBackWindow != nil {
-		output.LookBackWindow = string(*input.LookBackWindow)
 	}
 
 	return output

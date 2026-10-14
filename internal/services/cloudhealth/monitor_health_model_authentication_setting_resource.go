@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/authenticationsettings"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/authenticationsettings"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -37,7 +37,7 @@ func (HealthModelAuthenticationSettingResource) ModelObject() interface{} {
 }
 
 func (HealthModelAuthenticationSettingResource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
-	return authenticationsettings.ValidateAuthenticationSettingID
+	return authenticationsettings.ValidateAuthenticationsettingID
 }
 
 func (HealthModelAuthenticationSettingResource) Arguments() map[string]*pluginsdk.Schema {
@@ -53,7 +53,7 @@ func (HealthModelAuthenticationSettingResource) Arguments() map[string]*pluginsd
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ForceNew:     true,
-			ValidateFunc: authenticationsettings.ValidateHealthModelID,
+			ValidateFunc: authenticationsettings.ValidateHealthmodelID,
 		},
 
 		"managed_identity": {
@@ -85,12 +85,12 @@ func (r HealthModelAuthenticationSettingResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			healthModelId, err := authenticationsettings.ParseHealthModelID(config.HealthModelId)
+			healthModelId, err := authenticationsettings.ParseHealthmodelID(config.HealthModelId)
 			if err != nil {
 				return err
 			}
 
-			id := authenticationsettings.NewAuthenticationSettingID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthModelName, config.Name)
+			id := authenticationsettings.NewAuthenticationsettingID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -121,7 +121,7 @@ func (HealthModelAuthenticationSettingResource) Read() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.AuthenticationSettings
 
-			id, err := authenticationsettings.ParseAuthenticationSettingID(metadata.ResourceData.Id())
+			id, err := authenticationsettings.ParseAuthenticationsettingID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -135,8 +135,8 @@ func (HealthModelAuthenticationSettingResource) Read() sdk.ResourceFunc {
 			}
 
 			state := HealthModelAuthenticationSettingResourceModel{
-				Name:          id.AuthenticationSettingName,
-				HealthModelId: authenticationsettings.NewHealthModelID(id.SubscriptionId, id.ResourceGroupName, id.HealthModelName).ID(),
+				Name:          id.AuthenticationsettingName,
+				HealthModelId: authenticationsettings.NewHealthmodelID(id.SubscriptionId, id.ResourceGroupName, id.HealthmodelName).ID(),
 			}
 
 			if model := resp.Model; model != nil && model.Properties != nil {
@@ -160,7 +160,7 @@ func (HealthModelAuthenticationSettingResource) Update() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.AuthenticationSettings
 
-			id, err := authenticationsettings.ParseAuthenticationSettingID(metadata.ResourceData.Id())
+			id, err := authenticationsettings.ParseAuthenticationsettingID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -189,7 +189,7 @@ func (HealthModelAuthenticationSettingResource) Delete() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.AuthenticationSettings
 
-			id, err := authenticationsettings.ParseAuthenticationSettingID(metadata.ResourceData.Id())
+			id, err := authenticationsettings.ParseAuthenticationsettingID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}

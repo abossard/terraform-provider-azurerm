@@ -7,20 +7,18 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/terraform-provider-azurerm/internal/common"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/authenticationsettings"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/discoveryrules"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/healthmodels"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/relationships"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/signaldefinitions"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/authenticationsettings"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/discoveryrules"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/healthmodels"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/relationships"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/signaldefinitions"
 )
 
 // Client holds the SDK clients for the `Microsoft.CloudHealth` service.
 //
-// `Microsoft.CloudHealth` only publishes preview API versions, so `hashicorp/pandora` has not yet
-// generated a `hashicorp/go-azure-sdk` package for it. The clients below come from the in-repo
-// package at `internal/services/cloudhealth/sdk/2026-05-01-preview`, which is generated in the same
-// shape `pandora` emits so it can be lifted out verbatim once a `go-azure-sdk` package exists.
+// The clients use the stable 2026-11-01 API from the local Pandora-generated SDK until CloudHealth
+// is available in the vendored `hashicorp/go-azure-sdk`.
 type Client struct {
 	AuthenticationSettings *authenticationsettings.AuthenticationSettingsClient
 	DiscoveryRules         *discoveryrules.DiscoveryRulesClient

@@ -264,23 +264,21 @@ An `unhealthy` or `degraded` block supports the following:
 
 * `sensitivity` - (Optional) The sensitivity of dynamic threshold detection. Possible values are `Low`, `Medium` and `High`. This can only be set when `operator` is `Dynamic`.
 
-* `look_back_window` - (Optional) The historical window used to compute the dynamic threshold. Possible values are `PT5M`, `PT15M`, `PT30M` and `PT1H`. This can only be set when `operator` is `Dynamic`.
-
 ~> **Note:** `Dynamic` is only valid on the `unhealthy` rule.
 
 ---
 
 A `dependency` block supports the following:
 
-* `aggregation_type` - (Required) How the health states of child Entities roll up into this Entity. Possible values are `WorstOf`, `MinHealthy` and `MaxNotHealthy`.
+* `aggregation_type` - (Required) How the health states of child Entities roll up into this Entity. Possible values are `WorstOf`, `BestOf`, `MinHealthy` and `MaxNotHealthy`.
 
-* `unit` - (Optional) The unit of the aggregation thresholds. Possible values are `Absolute` and `Percentage`. This is required when `aggregation_type` is `MinHealthy` or `MaxNotHealthy`.
+* `unit` - (Optional) The unit of the aggregation thresholds. Possible values are `Absolute` and `Percentage`. This is required when `aggregation_type` is `MinHealthy` or `MaxNotHealthy` and cannot be set for `WorstOf` or `BestOf`.
 
-* `unhealthy_threshold` - (Optional) The threshold at which this Entity becomes unhealthy. This is required when `aggregation_type` is `MinHealthy` or `MaxNotHealthy`.
+* `unhealthy_threshold` - (Optional) The threshold at which this Entity becomes unhealthy. This is required when `aggregation_type` is `MinHealthy` or `MaxNotHealthy` and cannot be set for `WorstOf` or `BestOf`.
 
-* `degraded_threshold` - (Optional) The threshold at which this Entity becomes degraded. If this is not specified the Entity transitions directly from healthy to unhealthy.
+* `degraded_threshold` - (Optional) The threshold at which this Entity becomes degraded. If this is not specified the Entity transitions directly from healthy to unhealthy. This cannot be set for `WorstOf` or `BestOf`.
 
-* `ignore_unknown_enabled` - (Optional) Whether children with an `Unknown` health state are excluded from the aggregation. Defaults to `true`.
+* `ignore_unknown_enabled` - (Optional) Whether children with an `Unknown` health state are excluded from the aggregation. Defaults to `true`. This has no effect for `WorstOf` or `BestOf`.
 
 ---
 

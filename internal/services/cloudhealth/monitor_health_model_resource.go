@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/identity"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/location"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/healthmodels"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/healthmodels"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
@@ -40,7 +40,7 @@ func (HealthModelResource) ModelObject() interface{} {
 }
 
 func (HealthModelResource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
-	return healthmodels.ValidateHealthModelID
+	return healthmodels.ValidateHealthmodelID
 }
 
 func (HealthModelResource) Arguments() map[string]*pluginsdk.Schema {
@@ -78,7 +78,7 @@ func (r HealthModelResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			id := healthmodels.NewHealthModelID(subscriptionId, config.ResourceGroupName, config.Name)
+			id := healthmodels.NewHealthmodelID(subscriptionId, config.ResourceGroupName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -88,7 +88,7 @@ func (r HealthModelResource) Create() sdk.ResourceFunc {
 				return metadata.ResourceRequiresImport(r.ResourceType(), id)
 			}
 
-			expandedIdentity, err := identity.ExpandSystemAndUserAssignedMapFromModel(config.Identity)
+			expandedIdentity, err := identity.ExpandLegacySystemAndUserAssignedMapFromModel(config.Identity)
 			if err != nil {
 				return fmt.Errorf("expanding `identity`: %+v", err)
 			}
@@ -117,7 +117,7 @@ func (HealthModelResource) Read() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.HealthModels
 
-			id, err := healthmodels.ParseHealthModelID(metadata.ResourceData.Id())
+			id, err := healthmodels.ParseHealthmodelID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -131,7 +131,7 @@ func (HealthModelResource) Read() sdk.ResourceFunc {
 			}
 
 			state := HealthModelResourceModel{
-				Name:              id.HealthModelName,
+				Name:              id.HealthmodelName,
 				ResourceGroupName: id.ResourceGroupName,
 			}
 
@@ -139,11 +139,11 @@ func (HealthModelResource) Read() sdk.ResourceFunc {
 				state.Location = location.Normalize(model.Location)
 				state.Tags = pointer.From(model.Tags)
 
-				flattenedIdentity, err := identity.FlattenSystemAndUserAssignedMapToModel(model.Identity)
+				flattenedIdentity, err := identity.FlattenLegacySystemAndUserAssignedMapToModel(model.Identity)
 				if err != nil {
 					return fmt.Errorf("flattening `identity`: %+v", err)
 				}
-				state.Identity = pointer.From(flattenedIdentity)
+				state.Identity = flattenedIdentity
 			}
 
 			return metadata.Encode(&state)
@@ -157,7 +157,7 @@ func (HealthModelResource) Update() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.HealthModels
 
-			id, err := healthmodels.ParseHealthModelID(metadata.ResourceData.Id())
+			id, err := healthmodels.ParseHealthmodelID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -170,7 +170,7 @@ func (HealthModelResource) Update() sdk.ResourceFunc {
 			payload := healthmodels.HealthModelUpdate{}
 
 			if metadata.ResourceData.HasChange("identity") {
-				expandedIdentity, err := identity.ExpandSystemAndUserAssignedMapFromModel(config.Identity)
+				expandedIdentity, err := identity.ExpandLegacySystemAndUserAssignedMapFromModel(config.Identity)
 				if err != nil {
 					return fmt.Errorf("expanding `identity`: %+v", err)
 				}
@@ -196,7 +196,7 @@ func (HealthModelResource) Delete() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.CloudHealth.HealthModels
 
-			id, err := healthmodels.ParseHealthModelID(metadata.ResourceData.Id())
+			id, err := healthmodels.ParseHealthmodelID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}

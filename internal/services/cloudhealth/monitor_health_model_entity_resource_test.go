@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -357,9 +357,8 @@ resource "azurerm_monitor_health_model_entity" "test" {
 
         evaluation_rule {
           unhealthy {
-            operator         = "Dynamic"
-            sensitivity      = "Medium"
-            look_back_window = "PT1H"
+            operator    = "Dynamic"
+            sensitivity = "Medium"
           }
         }
       }

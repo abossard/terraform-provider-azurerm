@@ -10,7 +10,7 @@ import (
 
 // healthModelChildNamePattern is declared identically by the `authenticationSettingName`,
 // `discoveryRuleName`, `entityName`, `signalDefinitionName` and `signalName` definitions and by the
-// `relationshipName` path parameter in the `2026-05-01-preview` Microsoft.CloudHealth swagger. All six
+// `relationshipName` path parameter in the `2026-11-01` Microsoft.CloudHealth swagger. All six
 // carry the same pattern, so one validator covers every child resource name.
 var healthModelChildNamePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{1,258}[a-zA-Z0-9]$`)
 

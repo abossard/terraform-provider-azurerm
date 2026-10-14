@@ -12,7 +12,7 @@ import (
 )
 
 // TestValidateDependencyAggregation covers both directions of the `dependency` contract the service
-// enforces: `WorstOf` refuses thresholds and units, and the counting aggregations require them.
+// enforces: `WorstOf` and `BestOf` refuse thresholds and units, and the counting aggregations require them.
 // The guard reads the raw configuration rather than the decoded model because the threshold fields
 // are `TypeFloat`, where an explicit `0` - a value the service accepts and stores - decodes
 // identically to an absent one.
@@ -25,6 +25,34 @@ func TestValidateDependencyAggregation(t *testing.T) {
 		{
 			name:  "worst of without thresholds is accepted",
 			input: map[string]cty.Value{"aggregation_type": cty.StringVal("WorstOf")},
+		},
+		{
+			name:  "best of without thresholds is accepted",
+			input: map[string]cty.Value{"aggregation_type": cty.StringVal("BestOf")},
+		},
+		{
+			name: "best of with a unit is rejected",
+			input: map[string]cty.Value{
+				"aggregation_type": cty.StringVal("BestOf"),
+				"unit":             cty.StringVal("Absolute"),
+			},
+			expectedError: "`unit` cannot be set",
+		},
+		{
+			name: "best of with a zero unhealthy threshold is rejected",
+			input: map[string]cty.Value{
+				"aggregation_type":    cty.StringVal("BestOf"),
+				"unhealthy_threshold": cty.NumberIntVal(0),
+			},
+			expectedError: "`unhealthy_threshold` cannot be set",
+		},
+		{
+			name: "best of with a degraded threshold is rejected",
+			input: map[string]cty.Value{
+				"aggregation_type":   cty.StringVal("BestOf"),
+				"degraded_threshold": cty.NumberIntVal(2),
+			},
+			expectedError: "`degraded_threshold` cannot be set",
 		},
 		{
 			name: "worst of with a unit is rejected",
@@ -204,6 +232,10 @@ func TestExpandHealthModelEntityDependencies(t *testing.T) {
 		{
 			name:  "worst of sends no thresholds",
 			input: DependencySignalGroupModel{AggregationType: "WorstOf"},
+		},
+		{
+			name:  "best of sends no thresholds",
+			input: DependencySignalGroupModel{AggregationType: "BestOf"},
 		},
 	}
 

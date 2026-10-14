@@ -5,7 +5,7 @@ package cloudhealth
 
 import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/entities"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 )
 
 func expandHealthModelEntityProperties(config HealthModelEntityResourceModel, degradedThresholdConfigured bool) *entities.EntityProperties {
@@ -383,20 +383,20 @@ func expandHealthModelEntityDependencies(input []DependencySignalGroupModel, deg
 	config := input[0]
 
 	output := entities.DependenciesSignalGroupV2{
-		AggregationType: entities.DependenciesAggregationType(config.AggregationType),
+		AggregationType: entities.AggregationType(config.AggregationType),
 		IgnoreUnknown:   pointer.To(config.IgnoreUnknownEnabled),
 	}
 
 	if config.Unit != "" {
-		output.Unit = pointer.To(entities.DependenciesAggregationUnit(config.Unit))
+		output.Unit = pointer.To(entities.AggregationUnit(config.Unit))
 	}
 
 	// `unhealthy_threshold` is `TypeFloat`, so a decoded `0` is indistinguishable from an absent
 	// one - and the service both accepts and stores a threshold of `0`. Keying off the aggregation
 	// type instead recovers the distinction: the plan-time guard has already established that the
-	// counting aggregations always carry a threshold and that `WorstOf` never does, so the
+	// counting aggregations always carry a threshold and that `WorstOf` and `BestOf` never do, so the
 	// aggregation type says which case this is.
-	if config.AggregationType != string(entities.DependenciesAggregationTypeWorstOf) {
+	if config.AggregationType != string(entities.AggregationTypeWorstOf) && config.AggregationType != string(entities.AggregationTypeBestOf) {
 		output.UnhealthyThreshold = pointer.To(config.UnhealthyThreshold)
 	}
 

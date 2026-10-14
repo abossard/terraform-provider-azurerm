@@ -134,8 +134,6 @@ An `unhealthy` or `degraded` block supports the following:
 
 * `sensitivity` - (Optional) The sensitivity of dynamic threshold detection. Possible values are `Low`, `Medium` and `High`. This can only be set when `operator` is `Dynamic`.
 
-* `look_back_window` - (Optional) The historical window used to compute the dynamic threshold. Possible values are `PT5M`, `PT15M`, `PT30M` and `PT1H`. This can only be set when `operator` is `Dynamic`.
-
 ~> **Note:** `Dynamic` is only valid on the `unhealthy` rule.
 
 ## Attributes Reference

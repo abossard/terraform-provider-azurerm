@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-05-01-preview/signaldefinitions"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/signaldefinitions"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
@@ -91,7 +91,7 @@ func TestAccMonitorHealthModelSignalDefinition_update(t *testing.T) {
 }
 
 // TestAccMonitorHealthModelSignalDefinition_logAnalyticsQuery covers the second of the three writable
-// `signalKind` discriminator values from the 2026-05-01-preview swagger.
+// `signalKind` discriminator values from the 2026-11-01 swagger.
 func TestAccMonitorHealthModelSignalDefinition_logAnalyticsQuery(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_monitor_health_model_signal_definition", "test")
 	r := MonitorHealthModelSignalDefinitionResource{}
@@ -159,7 +159,7 @@ func TestAccMonitorHealthModelSignalDefinition_staticOperatorWithSensitivity(t *
 }
 
 func (r MonitorHealthModelSignalDefinitionResource) Exists(ctx context.Context, clients *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
-	id, err := signaldefinitions.ParseSignalDefinitionID(state.ID)
+	id, err := signaldefinitions.ParseSignaldefinitionID(state.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -382,9 +382,8 @@ resource "azurerm_monitor_health_model_signal_definition" "test" {
 
   evaluation_rule {
     unhealthy {
-      operator         = "Dynamic"
-      sensitivity      = "Medium"
-      look_back_window = "PT15M"
+      operator    = "Dynamic"
+      sensitivity = "Medium"
     }
   }
 }

@@ -9,7 +9,7 @@ import (
 )
 
 // healthModelNamePattern is the `healthModelName` path parameter pattern from the
-// `2026-05-01-preview` Microsoft.CloudHealth swagger.
+// `2026-11-01` Microsoft.CloudHealth swagger.
 var healthModelNamePattern = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9-]{1,42}[a-zA-Z0-9]$`)
 
 func HealthModelName(v interface{}, k string) (warnings []string, errors []error) {
