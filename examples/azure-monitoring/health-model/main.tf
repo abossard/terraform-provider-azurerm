@@ -13,12 +13,6 @@ resource "azurerm_storage_account" "example" {
   location                 = azurerm_resource_group.example.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
-
-  # The Health Model reads this account through its managed identity, so key-based and public access
-  # are both pinned off. Leaving them at their defaults produces a perpetual diff in subscriptions
-  # whose policies enforce these settings.
-  public_network_access_enabled = false
-  shared_access_key_enabled     = false
 }
 
 resource "azurerm_monitor_health_model" "example" {
@@ -85,8 +79,6 @@ resource "azurerm_monitor_health_model_entity" "storage" {
       }
     }
   }
-
-  depends_on = [azurerm_role_assignment.example]
 }
 
 # The resource provider creates a root Entity named after the Health Model itself, so the
@@ -137,6 +129,4 @@ resource "azurerm_monitor_health_model_discovery_rule" "example" {
   relationship_discovery_enabled = true
   recommended_signals_enabled    = true
   resource_health_signal_enabled = true
-
-  depends_on = [azurerm_role_assignment.example]
 }
