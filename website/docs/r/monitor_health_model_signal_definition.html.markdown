@@ -12,6 +12,8 @@ Manages a Signal Definition within an Azure Monitor Health Model.
 
 A Signal Definition is a reusable signal template. Entities reference it by name through `signal_definition_name` instead of repeating the same metric, query and threshold configuration inline.
 
+Referenced Entity signals may omit metric, query and evaluation overrides. An omitted instance `refresh_interval` inherits the definition's interval, including values other than `PT1M`. The definition itself still requires its kind-specific fields and `evaluation_rule`.
+
 ## Example Usage
 
 ```hcl
@@ -74,11 +76,11 @@ The following arguments are supported:
 
 * `prometheus_metrics_query` - (Optional) A `prometheus_metrics_query` block as defined below. Exactly one of `azure_resource_metric`, `log_analytics_query` or `prometheus_metrics_query` must be specified. Changing this forces a new resource to be created.
 
-* `display_name` - (Optional) The display name of this Signal Definition.
+* `display_name` - (Optional) The display name of this Signal Definition. Must be between 1 and 260 characters long.
 
 * `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Defaults to `PT1M`.
 
-* `data_unit` - (Optional) The unit of the signal result, for example `Percent`, `Count`, `Bytes` or `MilliSeconds`.
+* `data_unit` - (Optional) The unit of the signal result, for example `Percent`, `Count`, `Bytes` or `MilliSeconds`. Must be between 1 and 100 characters long.
 
 * `tags` - (Optional) A mapping of tags which should be assigned to this Signal Definition.
 
@@ -86,35 +88,35 @@ The following arguments are supported:
 
 An `azure_resource_metric` block supports the following:
 
-* `metric_namespace` - (Required) The Azure Monitor metric namespace, for example `Microsoft.Storage/storageAccounts`.
+* `metric_namespace` - (Required) The Azure Monitor metric namespace, for example `Microsoft.Storage/storageAccounts`. Must be between 1 and 256 characters long.
 
-* `metric_name` - (Required) The Azure Monitor metric name.
+* `metric_name` - (Required) The Azure Monitor metric name. Must be between 1 and 256 characters long.
 
 * `aggregation_type` - (Required) The aggregation to apply to the metric. Possible values are `None`, `Average`, `Count`, `Minimum`, `Maximum` and `Total`.
 
-* `time_grain` - (Required) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`.
+* `time_grain` - (Required) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`. Must be between 1 and 100 characters long.
 
 ~> **Note:** `time_grain` must be a grain the target metric supports, and `refresh_interval` must be less than or equal to `time_grain`. Terraform cannot check either constraint at plan time; the resource provider rejects both on apply.
 
-* `dimension_filter` - (Optional) A filter applied to the metric's dimensions, for example `ResponseType eq 'ServerBusyError'`.
+* `dimension_filter` - (Optional) A filter applied to the metric's dimensions, for example `ResponseType eq 'ServerBusyError'`. Must be between 1 and 2048 characters long.
 
 ---
 
 A `log_analytics_query` block supports the following:
 
-* `query_text` - (Required) The KQL query to evaluate.
+* `query_text` - (Required) The KQL query to evaluate. Must be between 1 and 5000 characters long.
 
-* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. If this is not specified the KQL query must define its own time range.
+* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. Must be between 1 and 100 characters long. If this is not specified the KQL query must define its own time range.
 
-* `value_column_name` - (Optional) The numeric column in the result set that is compared against the thresholds. Defaults to the first column.
+* `value_column_name` - (Optional) The numeric column in the result set that is compared against the thresholds. Must be between 1 and 100 characters long. Defaults to the first column.
 
 ---
 
 A `prometheus_metrics_query` block supports the following:
 
-* `query_text` - (Required) The PromQL query to evaluate.
+* `query_text` - (Required) The PromQL query to evaluate. Must be between 1 and 5000 characters long.
 
-* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration.
+* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. Must be between 1 and 100 characters long.
 
 ---
 
@@ -130,7 +132,7 @@ An `unhealthy` or `degraded` block supports the following:
 
 * `operator` - (Required) How the signal value is compared with the threshold. Possible values are `Equal`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan`, `LessThanOrEqual`, `NotEqual` and `Dynamic`.
 
-* `threshold` - (Optional) The threshold the signal value is compared against. This is required unless `operator` is `Dynamic`, where it is ignored.
+* `threshold` - (Optional) The threshold the signal value is compared against. Required for static operators; an explicit `0` is valid. Cannot be set when `operator` is `Dynamic`.
 
 * `sensitivity` - (Optional) The sensitivity of dynamic threshold detection. Possible values are `Low`, `Medium` and `High`. This can only be set when `operator` is `Dynamic`.
 

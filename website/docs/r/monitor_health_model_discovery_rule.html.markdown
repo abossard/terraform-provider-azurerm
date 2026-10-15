@@ -10,7 +10,7 @@ description: |-
 
 Manages a Discovery Rule within an Azure Monitor Health Model.
 
-A Discovery Rule populates a Health Model with Entities, and optionally Relationships, from an Azure Resource Graph query or an Application Insights topology.
+A Discovery Rule creates Entities in a Health Model from an Azure Resource Graph query or Application Insights topology. It can also create Relationships between those Entities.
 
 ## Example Usage
 
@@ -57,13 +57,13 @@ The following arguments are supported:
 
 * `health_model_id` - (Required) The ID of the Health Model in which this Discovery Rule should exist. Changing this forces a new resource to be created.
 
-* `authentication_setting_name` - (Required) The name of the `azurerm_monitor_health_model_authentication_setting` used to run the discovery query. The same Authentication Setting is assigned to every discovered Entity.
+* `authentication_setting_name` - (Required) The name of the `azurerm_monitor_health_model_authentication_setting` used to run the discovery query. The Discovery Rule assigns this Authentication Setting to each discovered Entity.
 
-* `resource_graph_query` - (Optional) The Azure Resource Graph query, in KQL syntax, used to discover resources. The query must project a column named `id` containing the resource ID. Exactly one of `resource_graph_query` or `application_insights_id` must be specified. Changing this forces a new resource to be created.
+* `resource_graph_query` - (Optional) The Azure Resource Graph query, in KQL syntax, used to discover resources. Must be between 1 and 5000 characters long. The query must project a column named `id` containing the resource ID. Exactly one of `resource_graph_query` or `application_insights_id` must be specified. Changing this forces a new resource to be created.
 
 * `application_insights_id` - (Optional) The ID of the Application Insights component whose topology is used to discover resources. Exactly one of `resource_graph_query` or `application_insights_id` must be specified. Changing this forces a new resource to be created.
 
-* `display_name` - (Optional) The display name of this Discovery Rule.
+* `display_name` - (Optional) The display name of this Discovery Rule. Must be between 1 and 260 characters long.
 
 * `relationship_discovery_enabled` - (Optional) Whether Relationships between discovered Entities should be created automatically using a set of built-in rules. Defaults to `true`.
 

@@ -46,9 +46,9 @@ The following arguments are supported:
 
 * `health_model_id` - (Required) The ID of the Health Model in which this Authentication Setting should exist. Changing this forces a new resource to be created.
 
-* `managed_identity` - (Required) The Managed Identity that the Health Model uses when querying data sources. Set this to `SystemAssigned` to use the Health Model's System Assigned Managed Identity, or to the ID of a User Assigned Managed Identity assigned to the Health Model.
+* `managed_identity` - (Required) The Managed Identity that the Health Model uses when querying data sources. Use `SystemAssigned` for the Health Model's System Assigned Managed Identity. Otherwise, use the ID of a User Assigned Managed Identity assigned to the Health Model. Must be between 1 and 500 characters long.
 
-* `display_name` - (Optional) The display name of this Authentication Setting.
+* `display_name` - (Optional) The display name of this Authentication Setting. Must be between 1 and 260 characters long.
 
 ## Attributes Reference
 

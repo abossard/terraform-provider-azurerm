@@ -77,7 +77,7 @@ func (HealthModelRelationshipResource) Arguments() map[string]*pluginsdk.Schema 
 		"display_name": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 260),
 		},
 
 		"tags": commonschema.Tags(),
@@ -111,12 +111,14 @@ func (r HealthModelRelationshipResource) Create() sdk.ResourceFunc {
 
 			id := relationships.NewRelationshipID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			payload := relationships.Relationship{
@@ -189,8 +191,20 @@ func (HealthModelRelationshipResource) Update() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Properties == nil {
+				return fmt.Errorf("retrieving %s: missing model or properties", *id)
+			}
+			props := *existing.Model.Properties
+			planned := expandHealthModelRelationshipProperties(config)
+			props.ProvisioningState, props.DiscoveredBy = nil, nil
+			props.DisplayName = changedValue(metadata.ResourceData.HasChange, "display_name", props.DisplayName, planned.DisplayName)
+			props.Tags = changedValue(metadata.ResourceData.HasChange, "tags", props.Tags, planned.Tags)
 			payload := relationships.Relationship{
-				Properties: expandHealthModelRelationshipProperties(config),
+				Properties: &props,
 			}
 
 			if err := client.CreateOrUpdateThenPoll(ctx, *id, payload); err != nil {

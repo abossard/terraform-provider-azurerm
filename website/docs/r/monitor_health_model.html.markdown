@@ -47,7 +47,7 @@ The following arguments are supported:
 
 * `identity` - (Optional) An `identity` block as defined below.
 
-~> **Note:** The Health Model's identity needs the `Reader` role over every scope it monitors. `Monitoring Reader` falls short: without `Reader`, every signal evaluates to `Unknown`.
+~> **Note:** The Health Model's identity needs the `Reader` role on each scope it monitors. With only `Monitoring Reader`, signals evaluate to `Unknown`.
 
 * `tags` - (Optional) A mapping of tags which should be assigned to the Health Model.
 

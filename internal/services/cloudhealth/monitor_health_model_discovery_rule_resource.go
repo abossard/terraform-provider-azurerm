@@ -76,7 +76,7 @@ func (HealthModelDiscoveryRuleResource) Arguments() map[string]*pluginsdk.Schema
 			Optional:     true,
 			ForceNew:     true,
 			ExactlyOneOf: specifications,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 5000),
 		},
 
 		"application_insights_id": {
@@ -90,7 +90,7 @@ func (HealthModelDiscoveryRuleResource) Arguments() map[string]*pluginsdk.Schema
 		"display_name": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 260),
 		},
 
 		"relationship_discovery_enabled": {
@@ -140,12 +140,14 @@ func (r HealthModelDiscoveryRuleResource) Create() sdk.ResourceFunc {
 
 			id := discoveryrules.NewDiscoveryruleID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			props, err := expandHealthModelDiscoveryRuleProperties(config)
@@ -212,7 +214,11 @@ func (HealthModelDiscoveryRuleResource) Read() sdk.ResourceFunc {
 				case discoveryrules.ResourceGraphQuerySpecification:
 					state.ResourceGraphQuery = specification.ResourceGraphQuery
 				case discoveryrules.ApplicationInsightsTopologySpecification:
-					state.ApplicationInsightsId = specification.ApplicationInsightsResourceId
+					component, err := components.ParseComponentIDInsensitively(specification.ApplicationInsightsResourceId)
+					if err != nil {
+						return fmt.Errorf("parsing `application_insights_id` for %s: %+v", *id, err)
+					}
+					state.ApplicationInsightsId = component.ID()
 				default:
 					return fmt.Errorf("retrieving %s: unhandled specification kind %q", *id, props.Specification.DiscoveryRuleSpecification().Kind)
 				}
@@ -244,8 +250,22 @@ func (HealthModelDiscoveryRuleResource) Update() sdk.ResourceFunc {
 				return err
 			}
 
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Properties == nil || existing.Model.Properties.Specification == nil {
+				return fmt.Errorf("retrieving %s: missing model, properties or specification", *id)
+			}
+			current := *existing.Model.Properties
+			current.ProvisioningState, current.EntityName, current.Error = nil, nil, nil
+			current.DisplayName = changedValue(metadata.ResourceData.HasChange, "display_name", current.DisplayName, props.DisplayName)
+			current.AuthenticationSetting = changedValue(metadata.ResourceData.HasChange, "authentication_setting_name", current.AuthenticationSetting, props.AuthenticationSetting)
+			current.DiscoverRelationships = changedValue(metadata.ResourceData.HasChange, "relationship_discovery_enabled", current.DiscoverRelationships, props.DiscoverRelationships)
+			current.AddRecommendedSignals = changedValue(metadata.ResourceData.HasChange, "recommended_signals_enabled", current.AddRecommendedSignals, props.AddRecommendedSignals)
+			current.AddResourceHealthSignal = changedValue(metadata.ResourceData.HasChange, "resource_health_signal_enabled", current.AddResourceHealthSignal, props.AddResourceHealthSignal)
 			payload := discoveryrules.DiscoveryRule{
-				Properties: props,
+				Properties: &current,
 			}
 
 			if err := client.CreateOrUpdateThenPoll(ctx, *id, payload); err != nil {

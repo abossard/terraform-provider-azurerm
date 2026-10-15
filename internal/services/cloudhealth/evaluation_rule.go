@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
@@ -40,6 +39,12 @@ func evaluationRuleSchema() *pluginsdk.Schema {
 	}
 }
 
+func instanceEvaluationRuleSchema() *pluginsdk.Schema {
+	schema := evaluationRuleSchema()
+	schema.Required, schema.Optional = false, true
+	return schema
+}
+
 func thresholdRuleSchema(required bool) *pluginsdk.Schema {
 	return &pluginsdk.Schema{
 		Type:     pluginsdk.TypeList,
@@ -51,7 +56,7 @@ func thresholdRuleSchema(required bool) *pluginsdk.Schema {
 				"operator": {
 					Type:         pluginsdk.TypeString,
 					Required:     true,
-					ValidateFunc: validation.StringInSlice(validate.PossibleValuesForSignalOperator(), false),
+					ValidateFunc: validation.StringInSlice(entities.PossibleValuesForSignalOperator(), false),
 				},
 
 				"threshold": {
@@ -62,7 +67,7 @@ func thresholdRuleSchema(required bool) *pluginsdk.Schema {
 				"sensitivity": {
 					Type:         pluginsdk.TypeString,
 					Optional:     true,
-					ValidateFunc: validation.StringInSlice(validate.PossibleValuesForDynamicThresholdSensitivity(), false),
+					ValidateFunc: validation.StringInSlice(entities.PossibleValuesForDynamicThresholdSensitivity(), false),
 				},
 			},
 		},
@@ -307,5 +312,78 @@ func validateThresholdRuleRawConfig(input cty.Value, blockName string) error {
 		return fmt.Errorf("`sensitivity` cannot be set in `evaluation_rule.%s` when `operator` is `%s` - it only applies when `operator` is `%s`", blockName, operator.AsString(), entities.SignalOperatorDynamic)
 	}
 
+	if !isConfigured("threshold") {
+		return fmt.Errorf("`threshold` must be set in `evaluation_rule.%s` when `operator` is `%s`", blockName, operator.AsString())
+	}
+
+	return nil
+}
+
+func validateEntityRawConfig(input cty.Value) error {
+	validators := map[string]func(cty.Value) error{
+		"signal_group": func(block cty.Value) error {
+			return validatePopulatedBlock(block, "signal_group", []string{"azure_resource", "azure_log_analytics", "azure_monitor_workspace", "dependency"})
+		},
+		"alert": func(block cty.Value) error {
+			return validatePopulatedBlock(block, "alert", []string{"unhealthy", "degraded"})
+		},
+	}
+	for _, kind := range []string{"azure_resource", "azure_log_analytics", "azure_monitor_workspace"} {
+		validators[kind] = func(block cty.Value) error {
+			fields := []string{"query_text", "evaluation_rule"}
+			if kind == "azure_resource" {
+				fields = []string{"metric_namespace", "metric_name", "aggregation_type", "time_grain", "evaluation_rule"}
+			}
+			for _, group := range block.AsValueSlice() {
+				if group.IsNull() || !group.IsKnown() || !group.Type().HasAttribute("signal") {
+					continue
+				}
+				signals := group.GetAttr("signal")
+				if signals.IsNull() || !signals.IsKnown() {
+					continue
+				}
+				for _, signal := range signals.AsValueSlice() {
+					if signal.IsNull() || !signal.IsKnown() {
+						continue
+					}
+					if signal.Type().HasAttribute("signal_definition_name") && !signal.GetAttr("signal_definition_name").IsNull() {
+						continue
+					}
+					for _, field := range fields {
+						if !signal.Type().HasAttribute(field) || signal.GetAttr(field).IsNull() {
+							return fmt.Errorf("`signal_group.%s.signal.%s` must be set when `signal_definition_name` is absent", kind, field)
+						}
+						value := signal.GetAttr(field)
+						if value.IsKnown() && value.CanIterateElements() && value.LengthInt() == 0 {
+							return fmt.Errorf("`signal_group.%s.signal.%s` must be set when `signal_definition_name` is absent", kind, field)
+						}
+					}
+				}
+			}
+			return nil
+		}
+	}
+	return walkRawConfigBlocks(input, validators)
+}
+
+func validatePopulatedBlock(input cty.Value, name string, children []string) error {
+	for _, block := range input.AsValueSlice() {
+		if block.IsNull() || !block.IsKnown() {
+			continue
+		}
+		populated := false
+		for _, child := range children {
+			if !block.Type().HasAttribute(child) {
+				continue
+			}
+			value := block.GetAttr(child)
+			if !value.IsNull() && (!value.IsKnown() || value.LengthInt() > 0) {
+				populated = true
+			}
+		}
+		if !populated {
+			return fmt.Errorf("`%s` must contain at least one of %v", name, children)
+		}
+	}
 	return nil
 }

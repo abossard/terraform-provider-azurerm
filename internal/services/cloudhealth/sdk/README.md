@@ -1,6 +1,6 @@
 # `Microsoft.CloudHealth` SDK
 
-This directory holds a generated Azure Resource Manager client for `Microsoft.CloudHealth`, API
+This directory contains a generated Azure Resource Manager client for `Microsoft.CloudHealth`, API
 version `2026-11-01` (stable).
 
 ## Why it lives here
@@ -8,30 +8,24 @@ version `2026-11-01` (stable).
 `github.com/hashicorp/go-azure-sdk/resource-manager` does not yet include `Microsoft.CloudHealth`.
 The provider resources use this local SDK until the upstream package is available.
 
-## Shape
+## Generated layout
 
-The tree is generated in the exact shape `pandora`'s `generator-go-sdk` emits, so that when a
-`go-azure-sdk` package does appear this directory can be deleted and the imports repointed with no
-other change:
+`pandora`'s `generator-go-sdk` generates the service packages. When `go-azure-sdk` includes
+`Microsoft.CloudHealth`, replace the local packages with imports from:
 
+```text
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/<package>
 ```
-internal/services/cloudhealth/sdk/2026-11-01/<package>/
-  →  github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/<package>/
-```
-
-Consequences of that, which are deliberate and should be preserved:
 
 - Package files follow the generated layout: `client.go`, `version.go`, `constants.go`, `id_*.go`,
   `method_*.go`, `model_*.go`, `predicates.go`.
-- Files carry the Microsoft/MIT header used by generated `go-azure-sdk` code, not the provider's
-  own header.
-- Nothing here imports `github.com/hashicorp/terraform-provider-azurerm`. The dependency arrow
-  points one way only, exactly as it would if this were an external module.
+- Files use the Microsoft/MIT header from generated `go-azure-sdk` code.
+- SDK packages must not import `github.com/hashicorp/terraform-provider-azurerm`.
 - Discriminated types (`AuthenticationSettingProperties`, `SignalInstanceProperties`,
   `SignalDefinitionProperties`, `DiscoveryRuleSpecification`) use the generated interface +
-  `Base…Impl` + `Raw…Impl` + `Unmarshal…Implementation` pattern rather than a hand-rolled union.
+  `Base...Impl` + `Raw...Impl` + `Unmarshal...Implementation` pattern.
 
-## Source of truth
+## Generation source
 
 `Azure/azure-rest-api-specs` commit `a3be4b61f3eba3138075131e2669ab43e7841eaf`, at
 `specification/cloudhealth/resource-manager/Microsoft.CloudHealth/CloudHealth/stable/2026-11-01/cloudhealth.json`.

@@ -30,9 +30,8 @@ resource "azurerm_monitor_health_model" "example" {
   }
 }
 
-# The resource provider creates a root Entity whose name matches the Health Model, so this
-# Relationship can reference it without declaring it. Declaring an Entity with that name would fail,
-# because it already exists - import it instead if you need to manage its properties.
+# The resource provider creates a root Entity with the Health Model's name.
+# Reference it here without declaring it. To manage its properties, import it first.
 resource "azurerm_monitor_health_model_entity" "data_tier" {
   name            = "example-data-tier"
   health_model_id = azurerm_monitor_health_model.example.id
@@ -70,7 +69,7 @@ The following arguments are supported:
 
 ~> **Note:** A parent and child Entity pair may only be connected by one Relationship.
 
-* `display_name` - (Optional) The display name of this Relationship.
+* `display_name` - (Optional) The display name of this Relationship. Must be between 1 and 260 characters long.
 
 * `tags` - (Optional) A mapping of tags which should be assigned to this Relationship.
 

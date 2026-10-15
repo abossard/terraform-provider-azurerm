@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
+	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/authenticationsettings"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
@@ -59,13 +60,13 @@ func (HealthModelAuthenticationSettingResource) Arguments() map[string]*pluginsd
 		"managed_identity": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.All(validation.StringLenBetween(1, 500), validateHealthModelManagedIdentity),
 		},
 
 		"display_name": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 260),
 		},
 	}
 }
@@ -92,12 +93,14 @@ func (r HealthModelAuthenticationSettingResource) Create() sdk.ResourceFunc {
 
 			id := authenticationsettings.NewAuthenticationsettingID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			payload := authenticationsettings.AuthenticationSetting{
@@ -170,8 +173,29 @@ func (HealthModelAuthenticationSettingResource) Update() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Properties == nil {
+				return fmt.Errorf("retrieving %s: missing model or properties", *id)
+			}
+			props, ok := existing.Model.Properties.(authenticationsettings.ManagedIdentityAuthenticationSettingProperties)
+			if !ok {
+				return fmt.Errorf("retrieving %s: expected ManagedIdentity properties", *id)
+			}
+			props.ProvisioningState = nil
+			if metadata.ResourceData.HasChange("managed_identity") {
+				props.ManagedIdentityName = config.ManagedIdentity
+			}
+			if metadata.ResourceData.HasChange("display_name") {
+				props.DisplayName = nil
+				if config.DisplayName != "" {
+					props.DisplayName = pointer.To(config.DisplayName)
+				}
+			}
 			payload := authenticationsettings.AuthenticationSetting{
-				Properties: expandHealthModelAuthenticationSettingProperties(config),
+				Properties: props,
 			}
 
 			if err := client.CreateOrUpdateThenPoll(ctx, *id, payload); err != nil {
@@ -201,6 +225,13 @@ func (HealthModelAuthenticationSettingResource) Delete() sdk.ResourceFunc {
 			return nil
 		},
 	}
+}
+
+func validateHealthModelManagedIdentity(value any, key string) ([]string, []error) {
+	if value == "SystemAssigned" {
+		return nil, nil
+	}
+	return commonids.ValidateUserAssignedIdentityID(value, key)
 }
 
 func expandHealthModelAuthenticationSettingProperties(config HealthModelAuthenticationSettingResourceModel) authenticationsettings.AuthenticationSettingProperties {

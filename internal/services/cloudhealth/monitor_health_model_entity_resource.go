@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/validate"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/ctyhelpers"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
@@ -168,7 +169,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 		"display_name": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 260),
 		},
 
 		"health_objective_percentage": {
@@ -181,7 +182,7 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			Default:      string(entities.EntityImpactStandard),
-			ValidateFunc: validation.StringInSlice(validate.PossibleValuesForEntityImpact(), false),
+			ValidateFunc: validation.StringInSlice(entities.PossibleValuesForEntityImpact(), false),
 		},
 
 		"canvas_position": {
@@ -212,13 +213,13 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 					"name": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 100),
 					},
 
 					"custom_data_base64": {
 						Type:         pluginsdk.TypeString,
 						Optional:     true,
-						ValidateFunc: validation.StringIsBase64,
+						ValidateFunc: validation.All(validation.StringLenBetween(1, 5000), validation.StringIsBase64),
 					},
 				},
 			},
@@ -268,53 +269,52 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 
 											"metric_namespace": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												Optional:     true,
+												ValidateFunc: validation.StringLenBetween(1, 256),
 											},
 
 											"metric_name": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												Optional:     true,
+												ValidateFunc: validation.StringLenBetween(1, 256),
 											},
 
 											"aggregation_type": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.StringInSlice(validate.PossibleValuesForMetricAggregationType(), false),
+												Optional:     true,
+												ValidateFunc: validation.StringInSlice(entities.PossibleValuesForMetricAggregationType(), false),
 											},
 
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.ISO8601Duration,
+												Optional:     true,
+												ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 											},
 
-											"evaluation_rule": evaluationRuleSchema(),
+											"evaluation_rule": instanceEvaluationRuleSchema(),
 
 											"display_name": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 260),
 											},
 
 											"dimension_filter": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 2048),
 											},
 
 											"refresh_interval": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												Default:      string(entities.RefreshIntervalPTOneM),
-												ValidateFunc: validation.StringInSlice(validate.PossibleValuesForRefreshInterval(), false),
+												ValidateFunc: validation.StringInSlice(entities.PossibleValuesForRefreshInterval(), false),
 											},
 
 											"data_unit": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 100),
 											},
 
 											"signal_definition_name": {
@@ -361,41 +361,40 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 
 											"query_text": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												Optional:     true,
+												ValidateFunc: validation.StringLenBetween(1, 5000),
 											},
 
-											"evaluation_rule": evaluationRuleSchema(),
+											"evaluation_rule": instanceEvaluationRuleSchema(),
 
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.ISO8601Duration,
+												ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 											},
 
 											"value_column_name": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 100),
 											},
 
 											"display_name": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 260),
 											},
 
 											"refresh_interval": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												Default:      string(entities.RefreshIntervalPTOneM),
-												ValidateFunc: validation.StringInSlice(validate.PossibleValuesForRefreshInterval(), false),
+												ValidateFunc: validation.StringInSlice(entities.PossibleValuesForRefreshInterval(), false),
 											},
 
 											"data_unit": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 100),
 											},
 
 											"signal_definition_name": {
@@ -442,35 +441,34 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 
 											"query_text": {
 												Type:         pluginsdk.TypeString,
-												Required:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												Optional:     true,
+												ValidateFunc: validation.StringLenBetween(1, 5000),
 											},
 
-											"evaluation_rule": evaluationRuleSchema(),
+											"evaluation_rule": instanceEvaluationRuleSchema(),
 
 											"time_grain": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.ISO8601Duration,
+												ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 											},
 
 											"display_name": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 260),
 											},
 
 											"refresh_interval": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												Default:      string(entities.RefreshIntervalPTOneM),
-												ValidateFunc: validation.StringInSlice(validate.PossibleValuesForRefreshInterval(), false),
+												ValidateFunc: validation.StringInSlice(entities.PossibleValuesForRefreshInterval(), false),
 											},
 
 											"data_unit": {
 												Type:         pluginsdk.TypeString,
 												Optional:     true,
-												ValidateFunc: validation.StringIsNotEmpty,
+												ValidateFunc: validation.StringLenBetween(1, 100),
 											},
 
 											"signal_definition_name": {
@@ -494,13 +492,13 @@ func (HealthModelEntityResource) Arguments() map[string]*pluginsdk.Schema {
 								"aggregation_type": {
 									Type:         pluginsdk.TypeString,
 									Required:     true,
-									ValidateFunc: validation.StringInSlice(validate.PossibleValuesForDependenciesAggregationType(), false),
+									ValidateFunc: validation.StringInSlice(entities.PossibleValuesForAggregationType(), false),
 								},
 
 								"unit": {
 									Type:         pluginsdk.TypeString,
 									Optional:     true,
-									ValidateFunc: validation.StringInSlice(validate.PossibleValuesForDependenciesAggregationUnit(), false),
+									ValidateFunc: validation.StringInSlice(entities.PossibleValuesForAggregationUnit(), false),
 								},
 
 								"unhealthy_threshold": {
@@ -551,13 +549,13 @@ func alertConfigurationSchema() *pluginsdk.Schema {
 				"severity": {
 					Type:         pluginsdk.TypeString,
 					Required:     true,
-					ValidateFunc: validation.StringInSlice(validate.PossibleValuesForAlertSeverity(), false),
+					ValidateFunc: validation.StringInSlice(entities.PossibleValuesForAlertSeverity(), false),
 				},
 
 				"description": {
 					Type:         pluginsdk.TypeString,
 					Optional:     true,
-					ValidateFunc: validation.StringIsNotEmpty,
+					ValidateFunc: validation.StringLenBetween(1, 1000),
 				},
 
 				"action_group_ids": {
@@ -595,6 +593,10 @@ func (r HealthModelEntityResource) CustomizeDiff() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			rawConfig := metadata.ResourceDiff.GetRawConfig()
 
+			if err := validateEntityRawConfig(rawConfig); err != nil {
+				return err
+			}
+
 			if err := validateEvaluationRuleRawConfig(rawConfig); err != nil {
 				return err
 			}
@@ -622,12 +624,14 @@ func (r HealthModelEntityResource) Create() sdk.ResourceFunc {
 
 			id := entities.NewEntityID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			rawConfig, err := metadata.GetRawConfig()
@@ -635,6 +639,7 @@ func (r HealthModelEntityResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("reading raw configuration for %s: %+v", id, err)
 			}
 
+			healthModelEntityRefreshOverrides(&config, rawConfig)
 			payload := entities.Entity{
 				Properties: expandHealthModelEntityProperties(config, dependencyDegradedThresholdConfigured(rawConfig)),
 			}
@@ -692,10 +697,21 @@ func (HealthModelEntityResource) Read() sdk.ResourceFunc {
 
 				state.CanvasPosition = flattenHealthModelEntityCanvasPosition(props.CanvasPosition)
 				state.Icon = flattenHealthModelEntityIcon(props.Icon)
-				state.SignalGroup = flattenHealthModelEntitySignalGroups(props.SignalGroups)
-				state.Alert = flattenHealthModelEntityAlerts(props.Alerts)
+				state.SignalGroup, err = flattenHealthModelEntitySignalGroups(props.SignalGroups)
+				if err != nil {
+					return fmt.Errorf("flattening signal groups for %s: %+v", *id, err)
+				}
+				state.Alert, err = flattenHealthModelEntityAlerts(props.Alerts)
+				if err != nil {
+					return fmt.Errorf("flattening alerts for %s: %+v", *id, err)
+				}
 			}
 
+			rawConfig, err := metadata.GetRawConfig()
+			if err != nil {
+				return fmt.Errorf("reading raw configuration for %s: %+v", *id, err)
+			}
+			healthModelEntityRefreshOverrides(&state, rawConfig)
 			return metadata.Encode(&state)
 		},
 	}
@@ -722,8 +738,22 @@ func (HealthModelEntityResource) Update() sdk.ResourceFunc {
 				return fmt.Errorf("reading raw configuration for %s: %+v", *id, err)
 			}
 
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Properties == nil {
+				return fmt.Errorf("retrieving %s: missing model or properties", *id)
+			}
+			if plan := metadata.ResourceData.GetRawPlan(); !plan.IsNull() && plan.IsKnown() {
+				value, err := ctyhelpers.ConstructCtyPath("health_objective_percentage").Apply(plan)
+				if err != nil || value.IsNull() {
+					config.HealthObjectivePercentage = nil
+				}
+			}
+			healthModelEntityRefreshOverrides(&config, rawConfig)
 			payload := entities.Entity{
-				Properties: expandHealthModelEntityProperties(config, dependencyDegradedThresholdConfigured(rawConfig)),
+				Properties: mergeHealthModelEntityProperties(*existing.Model.Properties, expandHealthModelEntityProperties(config, dependencyDegradedThresholdConfigured(rawConfig)), cloudHealthChanges(metadata.ResourceData)),
 			}
 
 			if err := client.CreateOrUpdateThenPoll(ctx, *id, payload); err != nil {

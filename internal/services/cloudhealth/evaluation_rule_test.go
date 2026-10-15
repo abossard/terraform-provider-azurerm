@@ -6,6 +6,7 @@ package cloudhealth
 import (
 	"testing"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
@@ -104,6 +105,33 @@ func TestThresholdRuleSchemaStableAPI(t *testing.T) {
 
 			if _, exists := resource.Schema["look_back_window"]; exists {
 				t.Fatal("look_back_window is not supported by the 2026-11-01 stable API")
+			}
+		})
+	}
+}
+
+func TestThresholdRuleConfiguredPresence(t *testing.T) {
+	for _, state := range []string{"unhealthy", "degraded"} {
+		for _, operator := range entities.PossibleValuesForSignalOperator() {
+			for _, threshold := range []cty.Value{cty.NullVal(cty.Number), cty.NumberIntVal(0), cty.NumberIntVal(7), cty.UnknownVal(cty.Number)} {
+				t.Run(state+"/"+operator+"/"+threshold.GoString(), func(t *testing.T) {
+					input := cty.ObjectVal(map[string]cty.Value{"operator": cty.StringVal(operator), "threshold": threshold, "sensitivity": cty.NullVal(cty.String)})
+					err := validateThresholdRuleRawConfig(input, state)
+					expectedError := threshold.IsNull()
+					if operator == string(entities.SignalOperatorDynamic) {
+						expectedError = !threshold.IsNull()
+					}
+					if (err != nil) != expectedError {
+						t.Fatalf("expected error=%t, got %v", expectedError, err)
+					}
+				})
+			}
+		}
+	}
+	for _, threshold := range []cty.Value{cty.NullVal(cty.Number), cty.NumberIntVal(0), cty.UnknownVal(cty.Number)} {
+		t.Run("unknown operator/"+threshold.GoString(), func(t *testing.T) {
+			if err := validateThresholdRuleRawConfig(cty.ObjectVal(map[string]cty.Value{"operator": cty.UnknownVal(cty.String), "threshold": threshold, "sensitivity": cty.StringVal("Medium")}), "unhealthy"); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}

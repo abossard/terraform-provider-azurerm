@@ -12,7 +12,9 @@ Manages an Entity within an Azure Monitor Health Model.
 
 An Entity is a node in the health graph. A leaf Entity derives its health from signals evaluated against an Azure resource, a Log Analytics Workspace or an Azure Monitor Workspace. A grouping Entity derives its health from its child Entities.
 
-~> **Note:** The CloudHealth resource provider creates a root Entity automatically, named after the Health Model. Because it already exists, declaring an Entity with that name fails with a "resource already exists" error. To manage it with Terraform, write the `resource` block and then `terraform import` it onto the existing root rather than letting Terraform create it, e.g. `terraform import azurerm_monitor_health_model_entity.root /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-resources/providers/Microsoft.CloudHealth/healthmodels/example-model/entities/example-model`. Do not give a second Entity a different name intending it as the root: that creates a competing root rather than replacing the generated one.
+~> **Note:** The CloudHealth resource provider creates a root Entity with the Health Model's name. With the default provider overwrite setting, declaring an Entity with that name fails with a "resource already exists" error. To manage the root, define its `resource` block and import it, e.g. `terraform import azurerm_monitor_health_model_entity.root /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/example-resources/providers/Microsoft.CloudHealth/healthmodels/example-model/entities/example-model`. An Entity with a different name creates a competing root; it does not replace the service-created root.
+
+~> **Note:** Removing an imported root Entity while keeping its Health Model relinquishes Terraform state without deleting the Azure root. Its signals and alerts remain in Azure. Re-import the root to manage it again. Deleting the parent Health Model owns final cleanup of the root.
 
 ## Example Usage
 
@@ -98,7 +100,7 @@ The following arguments are supported:
 
 * `health_model_id` - (Required) The ID of the Health Model in which this Entity should exist. Changing this forces a new resource to be created.
 
-* `display_name` - (Optional) The display name of this Entity.
+* `display_name` - (Optional) The display name of this Entity. Must be between 1 and 260 characters long.
 
 * `health_objective_percentage` - (Optional) The percentage of time this Entity is expected to be healthy. Possible values are between `0` and `100`.
 
@@ -128,13 +130,15 @@ A `canvas_position` block supports the following:
 
 An `icon` block supports the following:
 
-* `name` - (Required) The name of the built-in icon to use, or `Custom` to use `custom_data_base64`.
+* `name` - (Required) The name of the built-in icon to use, or `Custom` to use `custom_data_base64`. Must be between 1 and 100 characters long.
 
-* `custom_data_base64` - (Optional) Base64 encoded SVG data to use as the icon. Setting this overrides the built-in icon.
+* `custom_data_base64` - (Optional) Base64 encoded SVG data to use as the icon. Setting this overrides the built-in icon. The encoded value must be between 1 and 5000 characters long.
 
 ---
 
 A `signal_group` block supports the following:
+
+At least one child block must be configured. Multiple data sources may be configured together.
 
 * `azure_resource` - (Optional) An `azure_resource` block as defined below.
 
@@ -160,29 +164,31 @@ An `azure_resource` block supports the following:
 
 A `signal` block within `azure_resource` supports the following:
 
+With `signal_definition_name`, metric fields and `evaluation_rule` are optional overrides. Without it, `metric_namespace`, `metric_name`, `aggregation_type`, `time_grain` and `evaluation_rule` are required.
+
 * `name` - (Required) The name of this signal, unique within the Entity.
 
-* `metric_namespace` - (Required) The Azure Monitor metric namespace, for example `Microsoft.Storage/storageAccounts`.
+* `metric_namespace` - (Optional) The Azure Monitor metric namespace, for example `Microsoft.Storage/storageAccounts`. Required without `signal_definition_name`. Must be between 1 and 256 characters long.
 
-* `metric_name` - (Required) The Azure Monitor metric name.
+* `metric_name` - (Optional) The Azure Monitor metric name. Required without `signal_definition_name`. Must be between 1 and 256 characters long.
 
-* `aggregation_type` - (Required) The aggregation to apply to the metric. Possible values are `None`, `Average`, `Count`, `Minimum`, `Maximum` and `Total`.
+* `aggregation_type` - (Optional) The aggregation to apply to the metric. Required without `signal_definition_name`. Possible values are `None`, `Average`, `Count`, `Minimum`, `Maximum` and `Total`.
 
-* `time_grain` - (Required) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`.
+* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration, for example `PT5M`. Required without `signal_definition_name`. Must be between 1 and 100 characters long.
 
 ~> **Note:** `time_grain` must be a grain the target metric supports, and `refresh_interval` must be less than or equal to `time_grain`. Terraform cannot check either constraint at plan time; the resource provider rejects both on apply.
 
-* `evaluation_rule` - (Required) An `evaluation_rule` block as defined below.
+* `evaluation_rule` - (Optional) An `evaluation_rule` block as defined below. Required without `signal_definition_name`.
 
-* `display_name` - (Optional) The display name of this signal.
+* `display_name` - (Optional) The display name of this signal. Must be between 1 and 260 characters long.
 
-* `dimension_filter` - (Optional) A filter applied to the metric's dimensions, for example `ResponseType eq 'ServerBusyError'`.
+* `dimension_filter` - (Optional) A filter applied to the metric's dimensions, for example `ResponseType eq 'ServerBusyError'`. Must be between 1 and 2048 characters long.
 
-* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Defaults to `PT1M`.
+* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Inherits from `signal_definition_name` when omitted on a referenced signal; otherwise defaults to `PT1M`.
 
-* `data_unit` - (Optional) The unit of the signal result, for example `Percent`, `Count`, `Bytes` or `MilliSeconds`.
+* `data_unit` - (Optional) The unit of the signal result, for example `Percent`, `Count`, `Bytes` or `MilliSeconds`. Must be between 1 and 100 characters long.
 
-* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies default values for this signal.
+* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies defaults for omitted overrides. The signal name and its group's data source and Authentication Setting remain required.
 
 ---
 
@@ -198,23 +204,25 @@ An `azure_log_analytics` block supports the following:
 
 A `signal` block within `azure_log_analytics` supports the following:
 
+With `signal_definition_name`, query fields and `evaluation_rule` are optional overrides. Without it, `query_text` and `evaluation_rule` are required.
+
 * `name` - (Required) The name of this signal, unique within the Entity.
 
-* `query_text` - (Required) The KQL query to evaluate.
+* `query_text` - (Optional) The KQL query to evaluate. Required without `signal_definition_name`. Must be between 1 and 5000 characters long.
 
-* `evaluation_rule` - (Required) An `evaluation_rule` block as defined below.
+* `evaluation_rule` - (Optional) An `evaluation_rule` block as defined below. Required without `signal_definition_name`.
 
-* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. If this is not specified the KQL query must define its own time range.
+* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. Must be between 1 and 100 characters long. If neither this override nor the Signal Definition specifies a time range, the KQL query must define its own.
 
-* `value_column_name` - (Optional) The numeric column in the result set that is compared against the thresholds. Defaults to the first column.
+* `value_column_name` - (Optional) The numeric column in the result set that is compared against the thresholds. Must be between 1 and 100 characters long. Defaults to the first column.
 
-* `display_name` - (Optional) The display name of this signal.
+* `display_name` - (Optional) The display name of this signal. Must be between 1 and 260 characters long.
 
-* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Defaults to `PT1M`.
+* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Inherits from `signal_definition_name` when omitted on a referenced signal; otherwise defaults to `PT1M`.
 
-* `data_unit` - (Optional) The unit of the signal result.
+* `data_unit` - (Optional) The unit of the signal result. Must be between 1 and 100 characters long.
 
-* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies default values for this signal.
+* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies defaults for omitted overrides. The signal name and its group's data source and Authentication Setting remain required.
 
 ---
 
@@ -230,21 +238,23 @@ An `azure_monitor_workspace` block supports the following:
 
 A `signal` block within `azure_monitor_workspace` supports the following:
 
+With `signal_definition_name`, query fields and `evaluation_rule` are optional overrides. Without it, `query_text` and `evaluation_rule` are required.
+
 * `name` - (Required) The name of this signal, unique within the Entity.
 
-* `query_text` - (Required) The PromQL query to evaluate.
+* `query_text` - (Optional) The PromQL query to evaluate. Required without `signal_definition_name`. Must be between 1 and 5000 characters long.
 
-* `evaluation_rule` - (Required) An `evaluation_rule` block as defined below.
+* `evaluation_rule` - (Optional) An `evaluation_rule` block as defined below. Required without `signal_definition_name`.
 
-* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration.
+* `time_grain` - (Optional) The time range the signal is evaluated over, as an ISO 8601 duration. Must be between 1 and 100 characters long.
 
-* `display_name` - (Optional) The display name of this signal.
+* `display_name` - (Optional) The display name of this signal. Must be between 1 and 260 characters long.
 
-* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Defaults to `PT1M`.
+* `refresh_interval` - (Optional) How often the signal is evaluated. Possible values are `PT1M`, `PT5M`, `PT10M`, `PT15M`, `PT30M`, `PT1H` and `PT2H`. Inherits from `signal_definition_name` when omitted on a referenced signal; otherwise defaults to `PT1M`.
 
-* `data_unit` - (Optional) The unit of the signal result.
+* `data_unit` - (Optional) The unit of the signal result. Must be between 1 and 100 characters long.
 
-* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies default values for this signal.
+* `signal_definition_name` - (Optional) The name of an `azurerm_monitor_health_model_signal_definition` that supplies defaults for omitted overrides. The signal name and its group's data source and Authentication Setting remain required.
 
 ---
 
@@ -260,7 +270,7 @@ An `unhealthy` or `degraded` block supports the following:
 
 * `operator` - (Required) How the signal value is compared with the threshold. Possible values are `Equal`, `GreaterThan`, `GreaterThanOrEqual`, `LessThan`, `LessThanOrEqual`, `NotEqual` and `Dynamic`.
 
-* `threshold` - (Optional) The threshold the signal value is compared against. This is required unless `operator` is `Dynamic`, where it is ignored.
+* `threshold` - (Optional) The threshold the signal value is compared against. Required for static operators; an explicit `0` is valid. Cannot be set when `operator` is `Dynamic`.
 
 * `sensitivity` - (Optional) The sensitivity of dynamic threshold detection. Possible values are `Low`, `Medium` and `High`. This can only be set when `operator` is `Dynamic`.
 
@@ -284,6 +294,8 @@ A `dependency` block supports the following:
 
 An `alert` block supports the following:
 
+At least one of `unhealthy` or `degraded` must be configured.
+
 * `unhealthy` - (Optional) An `unhealthy` block as defined below.
 
 * `degraded` - (Optional) A `degraded` block as defined below.
@@ -294,7 +306,7 @@ An `unhealthy` or `degraded` block within `alert` supports the following:
 
 * `severity` - (Required) The severity of the triggered alert. Possible values are `Sev0`, `Sev1`, `Sev2`, `Sev3` and `Sev4`.
 
-* `description` - (Optional) The description of the alert rule.
+* `description` - (Optional) The description of the alert rule. Must be between 1 and 1000 characters long.
 
 * `action_group_ids` - (Optional) Between 1 and 5 Action Group IDs to notify when the alert triggers.
 

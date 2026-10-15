@@ -80,12 +80,14 @@ func (r HealthModelResource) Create() sdk.ResourceFunc {
 
 			id := healthmodels.NewHealthmodelID(subscriptionId, config.ResourceGroupName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			expandedIdentity, err := identity.ExpandLegacySystemAndUserAssignedMapFromModel(config.Identity)
@@ -167,7 +169,20 @@ func (HealthModelResource) Update() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			payload := healthmodels.HealthModelUpdate{}
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Location == "" {
+				return fmt.Errorf("retrieving %s: missing model or location", *id)
+			}
+
+			payload := healthmodels.HealthModel{
+				Location:   existing.Model.Location,
+				Identity:   existing.Model.Identity,
+				Tags:       existing.Model.Tags,
+				Properties: &healthmodels.HealthModelProperties{},
+			}
 
 			if metadata.ResourceData.HasChange("identity") {
 				expandedIdentity, err := identity.ExpandLegacySystemAndUserAssignedMapFromModel(config.Identity)
@@ -181,7 +196,7 @@ func (HealthModelResource) Update() sdk.ResourceFunc {
 				payload.Tags = pointer.To(config.Tags)
 			}
 
-			if err := client.UpdateThenPoll(ctx, *id, payload); err != nil {
+			if err := client.CreateThenPoll(ctx, *id, payload); err != nil {
 				return fmt.Errorf("updating %s: %+v", *id, err)
 			}
 

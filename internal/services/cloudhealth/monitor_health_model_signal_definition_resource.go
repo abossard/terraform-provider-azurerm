@@ -99,31 +99,31 @@ func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Sch
 					"metric_namespace": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 256),
 					},
 
 					"metric_name": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 256),
 					},
 
 					"aggregation_type": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringInSlice(validate.PossibleValuesForMetricAggregationType(), false),
+						ValidateFunc: validation.StringInSlice(signaldefinitions.PossibleValuesForMetricAggregationType(), false),
 					},
 
 					"time_grain": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.ISO8601Duration,
+						ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 					},
 
 					"dimension_filter": {
 						Type:         pluginsdk.TypeString,
 						Optional:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 2048),
 					},
 				},
 			},
@@ -140,19 +140,19 @@ func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Sch
 					"query_text": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 5000),
 					},
 
 					"time_grain": {
 						Type:         pluginsdk.TypeString,
 						Optional:     true,
-						ValidateFunc: validation.ISO8601Duration,
+						ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 					},
 
 					"value_column_name": {
 						Type:         pluginsdk.TypeString,
 						Optional:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 100),
 					},
 				},
 			},
@@ -169,13 +169,13 @@ func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Sch
 					"query_text": {
 						Type:         pluginsdk.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringIsNotEmpty,
+						ValidateFunc: validation.StringLenBetween(1, 5000),
 					},
 
 					"time_grain": {
 						Type:         pluginsdk.TypeString,
 						Optional:     true,
-						ValidateFunc: validation.ISO8601Duration,
+						ValidateFunc: validation.All(validation.StringLenBetween(1, 100), validation.ISO8601Duration),
 					},
 				},
 			},
@@ -184,20 +184,20 @@ func (HealthModelSignalDefinitionResource) Arguments() map[string]*pluginsdk.Sch
 		"display_name": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 260),
 		},
 
 		"refresh_interval": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			Default:      string(signaldefinitions.RefreshIntervalPTOneM),
-			ValidateFunc: validation.StringInSlice(validate.PossibleValuesForRefreshInterval(), false),
+			ValidateFunc: validation.StringInSlice(signaldefinitions.PossibleValuesForRefreshInterval(), false),
 		},
 
 		"data_unit": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: validation.StringLenBetween(1, 100),
 		},
 
 		"tags": commonschema.Tags(),
@@ -235,12 +235,14 @@ func (r HealthModelSignalDefinitionResource) Create() sdk.ResourceFunc {
 
 			id := signaldefinitions.NewSignaldefinitionID(healthModelId.SubscriptionId, healthModelId.ResourceGroupName, healthModelId.HealthmodelName, config.Name)
 
-			existing, err := client.Get(ctx, id)
-			if err != nil && !response.WasNotFound(existing.HttpResponse) {
-				return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
-			}
-			if !response.WasNotFound(existing.HttpResponse) {
-				return metadata.ResourceRequiresImport(r.ResourceType(), id)
+			if !metadata.Client.Features.SkipImportCheckOnCreateAndAllowOverwritingExistingResources {
+				existing, err := client.Get(ctx, id)
+				if err != nil && !response.WasNotFound(existing.HttpResponse) {
+					return fmt.Errorf("checking for presence of existing %s: %+v", id, err)
+				}
+				if !response.WasNotFound(existing.HttpResponse) {
+					return metadata.ResourceRequiresImport(r.ResourceType(), id)
+				}
 			}
 
 			props, err := expandHealthModelSignalDefinitionProperties(config)
@@ -319,6 +321,17 @@ func (HealthModelSignalDefinitionResource) Update() sdk.ResourceFunc {
 				return err
 			}
 
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+			if existing.Model == nil || existing.Model.Properties == nil {
+				return fmt.Errorf("retrieving %s: missing model or properties", *id)
+			}
+			props, err = mergeHealthModelSignalDefinitionProperties(existing.Model.Properties, props, cloudHealthChanges(metadata.ResourceData))
+			if err != nil {
+				return fmt.Errorf("merging properties for %s: %+v", *id, err)
+			}
 			payload := signaldefinitions.SignalDefinition{
 				Properties: props,
 			}
@@ -349,6 +362,59 @@ func (HealthModelSignalDefinitionResource) Delete() sdk.ResourceFunc {
 
 			return nil
 		},
+	}
+}
+
+func mergeHealthModelSignalDefinitionProperties(current, planned signaldefinitions.SignalDefinitionProperties, hasChange func(string) bool) (signaldefinitions.SignalDefinitionProperties, error) {
+	switch props := current.(type) {
+	case signaldefinitions.ResourceMetricSignalDefinitionProperties:
+		next, ok := planned.(signaldefinitions.ResourceMetricSignalDefinitionProperties)
+		if !ok {
+			return nil, fmt.Errorf("signal kind changed")
+		}
+		props.ProvisioningState = nil
+		props.DisplayName = changedValue(hasChange, "display_name", props.DisplayName, next.DisplayName)
+		props.DataUnit = changedValue(hasChange, "data_unit", props.DataUnit, next.DataUnit)
+		props.RefreshInterval = changedValue(hasChange, "refresh_interval", props.RefreshInterval, next.RefreshInterval)
+		props.Tags = changedValue(hasChange, "tags", props.Tags, next.Tags)
+		props.EvaluationRules = mergeSignalDefinitionEvaluationRule(props.EvaluationRules, next.EvaluationRules, hasChange)
+		props.MetricNamespace = changedValue(hasChange, "azure_resource_metric.0.metric_namespace", props.MetricNamespace, next.MetricNamespace)
+		props.MetricName = changedValue(hasChange, "azure_resource_metric.0.metric_name", props.MetricName, next.MetricName)
+		props.AggregationType = changedValue(hasChange, "azure_resource_metric.0.aggregation_type", props.AggregationType, next.AggregationType)
+		props.TimeGrain = changedValue(hasChange, "azure_resource_metric.0.time_grain", props.TimeGrain, next.TimeGrain)
+		props.DimensionFilter = changedValue(hasChange, "azure_resource_metric.0.dimension_filter", props.DimensionFilter, next.DimensionFilter)
+		return props, nil
+	case signaldefinitions.LogAnalyticsQuerySignalDefinitionProperties:
+		next, ok := planned.(signaldefinitions.LogAnalyticsQuerySignalDefinitionProperties)
+		if !ok {
+			return nil, fmt.Errorf("signal kind changed")
+		}
+		props.ProvisioningState = nil
+		props.DisplayName = changedValue(hasChange, "display_name", props.DisplayName, next.DisplayName)
+		props.DataUnit = changedValue(hasChange, "data_unit", props.DataUnit, next.DataUnit)
+		props.RefreshInterval = changedValue(hasChange, "refresh_interval", props.RefreshInterval, next.RefreshInterval)
+		props.Tags = changedValue(hasChange, "tags", props.Tags, next.Tags)
+		props.EvaluationRules = mergeSignalDefinitionEvaluationRule(props.EvaluationRules, next.EvaluationRules, hasChange)
+		props.QueryText = changedValue(hasChange, "log_analytics_query.0.query_text", props.QueryText, next.QueryText)
+		props.TimeGrain = changedValue(hasChange, "log_analytics_query.0.time_grain", props.TimeGrain, next.TimeGrain)
+		props.ValueColumnName = changedValue(hasChange, "log_analytics_query.0.value_column_name", props.ValueColumnName, next.ValueColumnName)
+		return props, nil
+	case signaldefinitions.PrometheusMetricsSignalDefinitionProperties:
+		next, ok := planned.(signaldefinitions.PrometheusMetricsSignalDefinitionProperties)
+		if !ok {
+			return nil, fmt.Errorf("signal kind changed")
+		}
+		props.ProvisioningState = nil
+		props.DisplayName = changedValue(hasChange, "display_name", props.DisplayName, next.DisplayName)
+		props.DataUnit = changedValue(hasChange, "data_unit", props.DataUnit, next.DataUnit)
+		props.RefreshInterval = changedValue(hasChange, "refresh_interval", props.RefreshInterval, next.RefreshInterval)
+		props.Tags = changedValue(hasChange, "tags", props.Tags, next.Tags)
+		props.EvaluationRules = mergeSignalDefinitionEvaluationRule(props.EvaluationRules, next.EvaluationRules, hasChange)
+		props.QueryText = changedValue(hasChange, "prometheus_metrics_query.0.query_text", props.QueryText, next.QueryText)
+		props.TimeGrain = changedValue(hasChange, "prometheus_metrics_query.0.time_grain", props.TimeGrain, next.TimeGrain)
+		return props, nil
+	default:
+		return nil, fmt.Errorf("unhandled signal kind %q", current.SignalDefinitionProperties().SignalKind)
 	}
 }
 
@@ -469,6 +535,20 @@ func flattenHealthModelSignalDefinitionProperties(input signaldefinitions.Signal
 	}
 
 	return nil
+}
+
+func mergeSignalDefinitionEvaluationRule(current, planned signaldefinitions.EvaluationRule, hasChange func(string) bool) signaldefinitions.EvaluationRule {
+	mergeThreshold := func(old, next signaldefinitions.ThresholdRuleV2, path string) signaldefinitions.ThresholdRuleV2 {
+		old.Operator = changedValue(hasChange, path+".0.operator", old.Operator, next.Operator)
+		old.Threshold = changedValue(hasChange, path+".0.threshold", old.Threshold, next.Threshold)
+		old.Sensitivity = changedValue(hasChange, path+".0.sensitivity", old.Sensitivity, next.Sensitivity)
+		return old
+	}
+	current.UnhealthyRule = mergeThreshold(current.UnhealthyRule, planned.UnhealthyRule, "evaluation_rule.0.unhealthy")
+	current.DegradedRule = mergeOptional(current.DegradedRule, planned.DegradedRule, "evaluation_rule.0.degraded", hasChange, func(old, next signaldefinitions.ThresholdRuleV2) signaldefinitions.ThresholdRuleV2 {
+		return mergeThreshold(old, next, "evaluation_rule.0.degraded")
+	})
+	return current
 }
 
 func expandSignalDefinitionEvaluationRule(input []EvaluationRuleModel) signaldefinitions.EvaluationRule {
