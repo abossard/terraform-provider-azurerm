@@ -72,6 +72,9 @@ var serviceTestConfigurationOverrides = mapOf(
         // Chaosstudio is only available in certain locations
         "chaosstudio" to testConfiguration(locationOverride = LocationConfiguration("westeurope", "eastus", "westus", false)),
 
+        // Monitor Health Models are only available in certain locations
+        "cloudhealth" to testConfiguration(locationOverride = LocationConfiguration("westeurope", "northeurope", "swedencentral", false)),
+
         // Codesigning is only available in certain locations
         "codesigning" to testConfiguration(locationOverride = LocationConfiguration("westeurope", "eastus", "westus", true)),
 

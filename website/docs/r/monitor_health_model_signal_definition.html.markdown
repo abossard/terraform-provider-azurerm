@@ -160,3 +160,9 @@ Health Model Signal Definitions can be imported using the `resource id`, e.g.
 ```shell
 terraform import azurerm_monitor_health_model_signal_definition.example /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resourceGroup1/providers/Microsoft.CloudHealth/healthmodels/model1/signaldefinitions/definition1
 ```
+
+## API Providers
+<!-- This section is generated, changes will be overwritten -->
+This resource uses the following Azure API Providers:
+
+* `Microsoft.CloudHealth` - 2026-11-01

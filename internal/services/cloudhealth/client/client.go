@@ -6,13 +6,13 @@ package client
 import (
 	"fmt"
 
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/authenticationsettings"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/discoveryrules"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/entities"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/healthmodels"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/relationships"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/signaldefinitions"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/common"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/authenticationsettings"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/discoveryrules"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/healthmodels"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/relationships"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/signaldefinitions"
 )
 
 // Client holds the SDK clients for the `Microsoft.CloudHealth` service.

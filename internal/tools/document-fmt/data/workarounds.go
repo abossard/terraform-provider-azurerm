@@ -13,6 +13,7 @@ var WorkaroundServiceNameToDirectory = map[string]string{
 	"Application Gateway":             "appgateway",
 	"Cognitive Services":              "cognitive",
 	"CosmosDB":                        "cosmos",
+	"Monitor Health Models":           "cloudhealth",
 	"Trusted Signing":                 "codesigning",
 	"PostgreSQL":                      "postgres",
 	"Resources":                       "resource",

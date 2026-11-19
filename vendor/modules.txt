@@ -425,6 +425,12 @@ github.com/hashicorp/go-azure-sdk/resource-manager/chaosstudio/2023-11-01/capabi
 github.com/hashicorp/go-azure-sdk/resource-manager/chaosstudio/2023-11-01/experiments
 github.com/hashicorp/go-azure-sdk/resource-manager/chaosstudio/2023-11-01/targets
 github.com/hashicorp/go-azure-sdk/resource-manager/chaosstudio/2023-11-01/targettypes
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/authenticationsettings
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/discoveryrules
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/entities
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/healthmodels
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/relationships
+github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/signaldefinitions
 github.com/hashicorp/go-azure-sdk/resource-manager/codesigning/2025-10-13
 github.com/hashicorp/go-azure-sdk/resource-manager/codesigning/2025-10-13/certificateprofiles
 github.com/hashicorp/go-azure-sdk/resource-manager/codesigning/2025-10-13/codesigningaccounts

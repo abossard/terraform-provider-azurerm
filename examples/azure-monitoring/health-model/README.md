@@ -4,4 +4,4 @@ This example creates a Storage Account and an Azure Monitor Health Model. It gra
 
 An Entity evaluates the Storage Account's `Availability` metric and Azure Resource Health state. A Relationship connects it to the model's service-created root Entity. A Signal Definition supplies a reusable availability metric template. A Discovery Rule queries Azure Resource Graph for the Resource Group's other resources.
 
-`Microsoft.CloudHealth/healthmodels` is not available in every region. Set `location` to one of `uksouth`, `canadacentral`, `centralus`, `swedencentral`, `southeastasia`, `switzerlandnorth`, `italynorth`, `northeurope`, `germanywestcentral`, `australiaeast`, `eastasia` or `japanwest`.
+`Microsoft.CloudHealth/healthmodels` is not available in every region. Run `az provider show --namespace Microsoft.CloudHealth --query "resourceTypes[?resourceType=='healthmodels'].locations[]"` to list the supported regions and set `location` to one of them.

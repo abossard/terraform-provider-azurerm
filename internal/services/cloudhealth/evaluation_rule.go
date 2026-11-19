@@ -6,8 +6,8 @@ package cloudhealth
 import (
 	"fmt"
 
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cloudhealth/2026-11-01/entities"
 	"github.com/hashicorp/go-cty/cty"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cloudhealth/sdk/2026-11-01/entities"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
